@@ -19,6 +19,7 @@ let potionUsedThisTurn = false;
 let gameOver = false;
 let currentMagicItem = null;
 let magicPurchasedThisDungeon = false;
+let currentChestCost = 5;
 let talismans = [];
 let extraCards = [];
 
@@ -349,6 +350,7 @@ function updateShopGold() {
 }
 
 function openShop() {
+    currentChestCost = 5;
     document.getElementById('game-screen').style.display = 'none';
     document.getElementById('shop-screen').style.display = 'block';
     updateShopGold();
@@ -376,7 +378,7 @@ function openShop() {
         specialsDiv.appendChild(mEl);
     }
 
-    let chestItem = { id: 'lootbox', name: 'Mysterious Chest', type: 'chest', displayType: 'Lootbox', cost: 10, desc: 'Open to draft 1 of 3 random items.' };
+    let chestItem = { id: 'lootbox', name: 'Mysterious Chest', type: 'chest', displayType: 'Lootbox', cost: currentChestCost, desc: 'Open to draft 1 of 3 random items.' };
     let cEl = createItemCard(chestItem, () => buyChest(chestItem, cEl));
     specialsDiv.appendChild(cEl);
 }
@@ -423,13 +425,16 @@ function buyMagic(item, el) {
 }
 
 function buyChest(item, el) {
-    if (gold < item.cost) {
+    if (gold < currentChestCost) {
         log("Shop: Not enough gold for Chest!");
         return;
     }
-    gold -= item.cost;
+    gold -= currentChestCost;
+    currentChestCost += 5;
+    item.cost = currentChestCost;
     updateShopGold();
-    el.style.display = 'none';
+    
+    el.lastElementChild.innerText = currentChestCost + ' G';
     log("Shop: Opened a Chest! Select 1 item.");
     
     const shopDiv = document.getElementById('shop-items');
