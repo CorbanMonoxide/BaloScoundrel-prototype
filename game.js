@@ -54,7 +54,8 @@ function updateUI() {
         const el = document.createElement('div');
         el.className = 'card ' + suits[card.suit].type + (card.played ? ' hidden' : '');
         
-        el.innerHTML = '<div style="margin-top: 15px;">' + suits[card.suit].symbol + ' ' + card.display + '</div>';
+        let suitColor = (card.suit === 'Hearts' || card.suit === 'Diamonds') ? '#e53935' : '#000000';
+        el.innerHTML = '<div style="margin-top: 15px;"><span style="color:' + suitColor + ';">' + suits[card.suit].symbol + '</span> <span style="color:#000000;">' + card.display + '</span></div>';
         
         if (suits[card.suit].type === 'monster') {
             const canUseWeapon = currentWeaponValue !== null && card.value <= currentWeaponLimit;
@@ -317,8 +318,9 @@ function createItemCard(item, onClickCallback, free = false) {
     if (item.type === 'weapon' || item.type === 'potion') {
         let cssClass = item.type === 'weapon' ? 'weapon' : 'potion';
         let symbol = item.type === 'weapon' ? '♦' : '♥';
-        visualHtml = `<div class="card ${cssClass}" style="margin: 10px auto; pointer-events: none; transform: none; box-shadow: 0 4px 8px rgba(0,0,0,0.3); height: 80px; width: 60px; font-size: 1.2rem; display: flex; align-items: center; justify-content: center;">
-            <div style="margin-top: 5px;">${symbol} ${item.cardData.display}</div>
+        let suitColor = (item.cardData.suit === 'Hearts' || item.cardData.suit === 'Diamonds') ? '#e53935' : '#000000';
+        visualHtml = `<div class="card ${cssClass}" style="margin: 10px auto; pointer-events: none; transform: none; box-shadow: 0 4px 8px rgba(0,0,0,0.3); height: 80px; width: 60px; font-size: 1.2rem; display: flex; align-items: center; justify-content: center; background: #ffffff; border: 1px solid #ccc; border-radius: 8px;">
+            <div style="margin-top: 5px;"><span style="color:${suitColor};">${symbol}</span> <span style="color:#000000;">${item.cardData.display}</span></div>
         </div>`;
     } else if (item.type === 'chest') {
          visualHtml = `<div style="font-size: 3rem; margin: 10px 0;">📦</div>`;
