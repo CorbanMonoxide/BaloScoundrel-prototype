@@ -473,6 +473,10 @@ function openShop() {
         specialsDiv.appendChild(mEl);
     }
 
+    let divider = document.createElement('div');
+    divider.style = 'width: 2px; background-color: #45475a; align-self: stretch;';
+    specialsDiv.appendChild(divider);
+
     let chestItem = { id: 'lootbox', name: 'Mysterious Chest', type: 'chest', displayType: 'Lootbox', cost: currentChestCost, desc: 'Open to draft 1 of 3 random items.' };
     let cEl = createItemCard(chestItem, () => buyChest(chestItem, cEl));
     specialsDiv.appendChild(cEl);
