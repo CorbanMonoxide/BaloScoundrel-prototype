@@ -415,6 +415,8 @@ function createItemCard(item, onClickCallback, free = false) {
         visualHtml = `<div class="card ${cssClass}" style="margin: 10px auto; pointer-events: none; transform: none; box-shadow: 0 4px 8px rgba(0,0,0,0.3); height: 80px; width: 60px; font-size: 1.2rem; display: flex; align-items: center; justify-content: center; background: #ffffff; border: 1px solid #ccc; border-radius: 8px;">
             <div style="margin-top: 5px;"><span style="color:${suitColor};">${symbol}</span> <span style="color:#000000;">${item.cardData.display}</span></div>
         </div>`;
+    } else if (item.type === 'talisman') {
+         visualHtml = `<div style="height: 75px; width: 50px; background: #45475a; border: 2px solid #89b4fa; border-radius: 6px; margin: 10px auto; display: flex; align-items: center; justify-content: center; font-size: 2rem; box-shadow: inset 0px 0px 8px rgba(0,0,0,0.8), 0 4px 6px rgba(0,0,0,0.3);">💠</div>`;
     } else if (item.type === 'chest') {
          visualHtml = `<div style="font-size: 3rem; margin: 10px 0;">📦</div>`;
     } else if (item.type === 'magic') {
