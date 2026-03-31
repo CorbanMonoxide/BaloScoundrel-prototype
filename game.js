@@ -42,7 +42,7 @@ function updateUI() {
     document.getElementById('hp').innerText = hp + ' / 20' + (typeof shieldHp !== 'undefined' && shieldHp > 0 ? ' [+' + shieldHp + ']' : '');
     document.getElementById('score').innerText = score;
     document.getElementById('gold').innerText = gold;
-    document.getElementById('mult').innerText = currentWeaponValue ? currentWeaponMult + 'x' : '1x';
+    document.getElementById('mult').innerText = currentWeaponValue ? currentWeaponValue + 'x' : '1x';
     document.getElementById('weapon').innerText = currentWeaponValue ? '♦ ' + currentWeaponValue + ' (Max: ' + currentWeaponLimit + ')' : 'None';
     document.getElementById('deck-count').innerText = deck.length;
     const tUI = document.getElementById('talismans-ui');
@@ -270,7 +270,7 @@ function playCard(index, useWeaponChoice = false) {
         
         if (useWeaponChoice && currentWeaponValue !== null && card.value <= currentWeaponLimit) {
             isBarehanded = false;
-            killMult = currentWeaponMult;
+            killMult = currentWeaponValue;
             
             let effWeaponVal = currentWeaponValue;
             if (typeof hasTalisman === 'function' && hasTalisman('t_blacksmith')) effWeaponVal += 3;
@@ -280,7 +280,7 @@ function playCard(index, useWeaponChoice = false) {
             
             log('Attacked ' + card.display + ' Monster with Weapon! Base dmg: ' + dmg);
             currentWeaponLimit = card.value;
-            currentWeaponMult = card.value;
+            // Multiplier no longer degrades, stays at weapon face value
         } else {
             isBarehanded = true;
             dmg = card.value;
