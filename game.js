@@ -45,7 +45,24 @@ function updateUI() {
     document.getElementById('mult').innerText = currentWeaponValue ? currentWeaponMult + 'x' : '1x';
     document.getElementById('weapon').innerText = currentWeaponValue ? '♦ ' + currentWeaponValue + ' (Max: ' + currentWeaponLimit + ')' : 'None';
     document.getElementById('deck-count').innerText = deck.length;
-    document.getElementById('talismans-ui').innerText = talismans.length + '/4';
+    const tUI = document.getElementById('talismans-ui');
+    tUI.innerText = talismans.length + '/4';
+    const tParent = tUI.parentElement;
+    
+    if (talismans.length > 0) {
+        tParent.classList.add('tooltip');
+        let tt = tParent.querySelector('.tooltiptext');
+        if (!tt) {
+            tt = document.createElement('div');
+            tt.className = 'tooltiptext';
+            tParent.appendChild(tt);
+        }
+        tt.innerHTML = talismans.map(t => `<strong style="color:#89b4fa;">${t.name}</strong><br>${t.desc}`).join('<br><br>');
+    } else {
+        tParent.classList.remove('tooltip');
+        let tt = tParent.querySelector('.tooltiptext');
+        if (tt) tt.remove();
+    }
     
     document.getElementById('target').innerText = targetScore + ' (D' + currentDungeon + 'C' + currentChamber + ')';
     
@@ -536,3 +553,43 @@ initGame();
 
 function hasTalisman(id) { return talismans.some(t => t.id === id); }
 function removeTalisman(id) { talismans = talismans.filter(t => t.id !== id); updateUI(); }
+
+function openSellMenu() {
+    document.getElementById('sell-modal').style.display = 'flex';
+    renderSellItems();
+}
+
+function closeSellMenu() {
+    document.getElementById('sell-modal').style.display = 'none';
+}
+
+function renderSellItems() {
+    const container = document.getElementById('sell-items');
+    container.innerHTML = '';
+    
+    if (talismans.length === 0) {
+        container.innerHTML = '<div style="color:#a6adc8; font-size:1.2rem;">No Talismans to sell.</div>';
+        return;
+    }
+    
+    talismans.forEach((t, index) => {
+        const el = document.createElement('div');
+        el.style = 'border: 1px solid #f38ba8; padding: 15px; border-radius: 8px; width: 140px; cursor: pointer; background: #313244; transition: 0.2s; display:flex; flex-direction:column; justify-content:space-between;';
+        el.innerHTML = `<h3 style="margin-top:0; color:#89b4fa; font-size:1rem; margin-bottom:5px;">${t.name}</h3><p style="font-size:0.75rem; color:#a6adc8; margin-top:0;">${t.desc}</p><div style="color:#a6e3a1; font-weight:bold; margin-top:10px;">Sell: 5 G</div>`;
+        
+        el.onmouseover = () => el.style.borderColor = '#a6e3a1';
+        el.onmouseout = () => el.style.borderColor = '#f38ba8';
+        
+        el.onclick = () => {
+            gold += 5;
+            talismans.splice(index, 1);
+            // Put it back in the shop pool so they can buy it again later if they want
+            shopDb.push(t);
+            updateShopGold();
+            updateUI();
+            renderSellItems();
+            log("Shop: Sold " + t.name + " for 5G.");
+        };
+        container.appendChild(el);
+    });
+}
