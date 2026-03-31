@@ -269,7 +269,6 @@ function playCard(index, useWeaponChoice = false) {
     updateUI();
 }
 
-initGame();
 
 const shopDb = [
     { id: 't_silver', name: 'Silver Blades', type: 'talisman', displayType: 'Talisman', cost: 8, desc: '+Dmg vs Clubs (WIP)' },
@@ -453,3 +452,5 @@ function closeShop() {
 
     startChamber();
 }
+
+initGame();
