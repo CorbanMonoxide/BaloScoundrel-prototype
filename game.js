@@ -1,6 +1,7 @@
 let deck = [];
 let currentRoom = [];
 let hp = 20;
+let shieldHp = 0;
 let score = 0;
 let gold = 0;
 
@@ -38,7 +39,7 @@ function log(msg) {
 }
 
 function updateUI() {
-    document.getElementById('hp').innerText = hp + ' / 20';
+    document.getElementById('hp').innerText = hp + ' / 20' + (typeof shieldHp !== 'undefined' && shieldHp > 0 ? ' [+' + shieldHp + ']' : '');
     document.getElementById('score').innerText = score;
     document.getElementById('gold').innerText = gold;
     document.getElementById('mult').innerText = currentWeaponValue ? currentWeaponMult + 'x' : '1x';
@@ -71,7 +72,6 @@ function updateUI() {
             actions.innerHTML = htmlStr;
             el.appendChild(actions);
             
-            // If clicking the card itself (not a button)
             el.onclick = () => {
                 if (!canUseWeapon) playCard(index, false);
             };
@@ -83,7 +83,7 @@ function updateUI() {
     });
 
     document.getElementById('btn-flee').disabled = gameOver || fledLastRoom || cardsPlayedThisRoom > 0;
-    document.getElementById('btn-next').disabled = gameOver || cardsPlayedThisRoom < 3;
+    document.getElementById('btn-next').disabled = gameOver || currentRoom.filter(c => !c.played).length > 1;
 }
 
 function buildDeck() {
@@ -118,6 +118,7 @@ function initGame() {
     hp = 20;
     score = 0;
     gold = 0;
+    shieldHp = 0;
     talismans = [];
     extraCards = [];
     rollMagicItem();
@@ -154,12 +155,29 @@ function drawRoom() {
     }
     
     const unplayed = currentRoom.filter(c => !c.played);
+    
+    if (unplayed.length === 1 && suits[unplayed[0].suit].type === 'monster' && !fledLastRoom && cardsPlayedThisRoom > 0) {
+        if (typeof hasTalisman === 'function' && hasTalisman('t_coward')) {
+            hp = Math.min(20, hp + 1);
+            log("Coward's Luck: Healed 1 HP for leaving a monster behind.");
+        }
+    }
+    
     currentRoom = [...unplayed];
 
     while(currentRoom.length < 4 && deck.length > 0) {
         let cardToDraw = deck.pop();
         cardToDraw.played = false;
         currentRoom.push(cardToDraw);
+    }
+    
+    if (typeof hasTalisman === 'function' && hasTalisman('t_scary')) {
+        let targetIdx = currentRoom.findIndex(c => suits[c.suit].type === 'monster' && c.value <= 8 && !c.played);
+        if (targetIdx !== -1) {
+            let scaredCard = currentRoom.splice(targetIdx, 1)[0];
+            deck.unshift(scaredCard);
+            log("Scary Aura frightened a " + scaredCard.display + " Monster to the bottom of the deck!");
+        }
     }
     
     cardsPlayedThisRoom = 0;
@@ -190,8 +208,8 @@ function nextChamber() {
 
 function playCard(index, useWeaponChoice = false) {
     if (gameOver) return;
-    if (cardsPlayedThisRoom >= 3) {
-        log("You've already played 3 cards this room! Click Next Room.");
+    if (currentRoom.filter(c => !c.played).length <= 1) {
+        log("You must leave 1 card behind! Click Next Room.");
         return;
     }
     
@@ -201,57 +219,103 @@ function playCard(index, useWeaponChoice = false) {
     const type = suits[card.suit].type;
     
     if (type === 'potion') {
-        if (potionUsedThisTurn) {
+        if (potionUsedThisTurn && !(typeof hasTalisman === 'function' && hasTalisman('m_flask'))) {
             log("Already drank a potion this room! Ignoring.");
-            card.played = true;
-            cardsPlayedThisRoom++;
-            updateUI();
             return;
         }
-        const heal = Math.min(20 - hp, card.value);
-        hp += heal;
+        const heal = card.value;
+        if (hp + heal > 20) {
+            const excess = (hp + heal) - 20;
+            hp = 20;
+            if (typeof hasTalisman === 'function' && hasTalisman('t_blood')) {
+                shieldHp += excess;
+                log('Blood Vial: Converted ' + excess + ' excess healing to Shield HP!');
+            } else {
+                log('Drank potion. HP full.');
+            }
+        } else {
+            hp += heal;
+            log('Drank potion. Restored ' + heal + ' HP.');
+        }
         potionUsedThisTurn = true;
-        log('Drank potion. Restored ' + heal + ' HP.');
     } 
     else if (type === 'weapon') {
         currentWeaponValue = card.value;
         currentWeaponLimit = 15; 
         currentWeaponMult = card.value;
-        log('Equipped Weapon ' + card.value + '.');
+        log('Equipped Weapon ' + card.display + '.');
     } 
     else if (type === 'monster') {
         let killMult = 1;
+        let dmg = 0;
+        let isBarehanded = true;
         
         if (useWeaponChoice && currentWeaponValue !== null && card.value <= currentWeaponLimit) {
+            isBarehanded = false;
             killMult = currentWeaponMult;
-            let dmg = Math.max(0, card.value - currentWeaponValue);
-            hp -= dmg;
             
-            log('Attacked ' + card.value + ' Monster with Weapon! Took ' + dmg + ' dmg.');
+            let effWeaponVal = currentWeaponValue;
+            if (typeof hasTalisman === 'function' && hasTalisman('t_blacksmith')) effWeaponVal += 3;
+            if (typeof hasTalisman === 'function' && hasTalisman('t_silver') && card.suit === 'Clubs') effWeaponVal *= 2;
             
+            dmg = Math.max(0, card.value - effWeaponVal);
+            
+            log('Attacked ' + card.display + ' Monster with Weapon! Base dmg: ' + dmg);
             currentWeaponLimit = card.value;
             currentWeaponMult = card.value;
         } else {
-            if (currentWeaponValue !== null && card.value > currentWeaponLimit) {
-                log('Monster (' + card.value + ') > Limit. Forced Barehanded! Mult 1x.');
-            } else if (currentWeaponValue !== null && !useWeaponChoice) {
-                log('Chose barehanded against ' + card.value + '! Saved weapon. Took ' + card.value + ' dmg.');
+            isBarehanded = true;
+            dmg = card.value;
+            
+            if (typeof hasTalisman === 'function' && hasTalisman('t_iron')) {
+                dmg = Math.max(0, dmg - 3);
+                killMult = 4;
+                log('Fists of Iron! Damage reduced, Mult x4.');
             } else {
-                log('Fought ' + card.value + ' barehanded! Took ' + card.value + ' dmg.');
+                killMult = 1;
             }
-            hp -= card.value;
-            killMult = 1;
+            
+            if (currentWeaponValue !== null && card.value > currentWeaponLimit) {
+                log('Monster (' + card.display + ') > Limit. Forced Barehanded!');
+            } else if (currentWeaponValue !== null && !useWeaponChoice) {
+                log('Chose barehanded against ' + card.display + '! Saved weapon.');
+            } else {
+                log('Fought ' + card.display + ' barehanded!');
+            }
         }
         
+        if (typeof hasTalisman === 'function' && hasTalisman('t_quick')) {
+            dmg = Math.max(0, dmg - 2);
+        }
+        
+        if (dmg > 0 && typeof shieldHp !== 'undefined' && shieldHp > 0) {
+            let block = Math.min(shieldHp, dmg);
+            shieldHp -= block;
+            dmg -= block;
+            log('Shield absorbed ' + block + ' dmg. (' + shieldHp + ' Shield left)');
+        }
+        
+        hp -= dmg;
+        if (dmg > 0) log('Took ' + dmg + ' damage to HP.');
+        
         let earnedGold = (card.value <= 10) ? 1 : (card.value - 9);
+        if (isBarehanded && typeof hasTalisman === 'function' && hasTalisman('t_pick')) { earnedGold += 2; log('Pickpocket: +2G'); }
+        if (card.value >= 10 && typeof hasTalisman === 'function' && hasTalisman('t_bounty')) { earnedGold += 2; log('Bounty Hunter: +2G'); }
+        
         gold += earnedGold;
         const points = (card.value * 10) * killMult;
         score += points;
-        log('Defeated ' + card.value + '! Scored ' + (card.value*10) + ' x ' + killMult + ' = ' + points + ' pts. (+' + earnedGold + ' Gold)');
+        log('Defeated ' + card.display + '! Scored ' + (card.value*10) + ' x ' + killMult + ' = ' + points + ' pts. (+' + earnedGold + ' Gold)');
     }
 
     card.played = true;
     cardsPlayedThisRoom++;
+    
+    if (hp <= 0 && typeof hasTalisman === 'function' && hasTalisman('t_undying')) {
+        hp = 5;
+        removeTalisman('t_undying');
+        log('✨ UNDYING ACTIVATED! Revived with 5 HP! ✨');
+    }
     
     if (hp <= 0) {
         log("You died! Game Over.");
@@ -272,13 +336,20 @@ function playCard(index, useWeaponChoice = false) {
 }
 
 
+
 const shopDb = [
-    { id: 't_silver', name: 'Silver Blades', type: 'talisman', displayType: 'Talisman', cost: 8, desc: '+Dmg vs Clubs (WIP)' },
-    { id: 't_quick', name: 'Quick Feet', type: 'talisman', displayType: 'Talisman', cost: 8, desc: 'Dodge 2 dmg (WIP)' },
-    { id: 't_pick', name: 'Pickpocket', type: 'talisman', displayType: 'Talisman', cost: 8, desc: '+2G on fist kill (WIP)' },
-    { id: 't_coward', name: 'Cowards Luck', type: 'talisman', displayType: 'Talisman', cost: 8, desc: 'Heal 1 on leave (WIP)' },
-    { id: 'c_shield', name: 'Shield', type: 'consumable', displayType: 'Consumable', cost: 5, desc: '+5 Temp HP (WIP)' },
-    { id: 'c_smoke', name: 'Smokescreen', type: 'consumable', displayType: 'Consumable', cost: 5, desc: 'Hide 1 monster (WIP)' }
+    { id: 't_silver', name: 'Silver Blades', type: 'talisman', displayType: 'Common Talisman', cost: 8, desc: 'Weapons 2x Dmg vs Clubs' },
+    { id: 't_quick', name: 'Quick Feet', type: 'talisman', displayType: 'Common Talisman', cost: 8, desc: 'Dodge 2 damage' },
+    { id: 't_pick', name: 'Pickpocket', type: 'talisman', displayType: 'Common Talisman', cost: 8, desc: '+2G on fist kill' },
+    { id: 't_coward', name: 'Cowards Luck', type: 'talisman', displayType: 'Common Talisman', cost: 8, desc: 'Heal 1 on leaving monster' },
+    { id: 't_blacksmith', name: 'Expert Blacksmith', type: 'talisman', displayType: 'Uncommon Talisman', cost: 12, desc: 'Weapons +3 dmg' },
+    { id: 't_scary', name: 'Scary Aura', type: 'talisman', displayType: 'Uncommon Talisman', cost: 12, desc: 'Scare monster <= 8' },
+    { id: 't_bounty', name: 'Bounty Hunter', type: 'talisman', displayType: 'Uncommon Talisman', cost: 12, desc: '+2G for kills >= 10' },
+    { id: 't_iron', name: 'Fists of Iron', type: 'talisman', displayType: 'Rare Talisman', cost: 20, desc: 'Fist dmg -3, Mult x4' },
+    { id: 't_blood', name: 'Blood Vial', type: 'talisman', displayType: 'Rare Talisman', cost: 20, desc: 'Excess heal to Shield' },
+    { id: 't_undying', name: 'Undying', type: 'talisman', displayType: 'Legendary Talisman', cost: 40, desc: 'Revive at 5HP (1 use)' },
+    { id: 'c_shield', name: 'Shield', type: 'consumable', displayType: 'Uncommon Consumable', cost: 5, desc: '+5 Temp HP' },
+    { id: 'c_smoke', name: 'Smokescreen', type: 'consumable', displayType: 'Uncommon Consumable', cost: 5, desc: 'Hide 1 monster' }
 ];
 
 const magicDb = [
@@ -461,3 +532,6 @@ function closeShop() {
 }
 
 initGame();
+
+function hasTalisman(id) { return talismans.some(t => t.id === id); }
+function removeTalisman(id) { talismans = talismans.filter(t => t.id !== id); updateUI(); }
