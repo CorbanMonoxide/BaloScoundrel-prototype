@@ -360,15 +360,15 @@ function playCard(index, useWeaponChoice = false) {
 
 
 let shopDb = [
-    { id: 't_silver', name: 'Silver Blades', type: 'talisman', displayType: 'Common Talisman', cost: 10, desc: 'Weapons 2x Dmg vs Clubs' },
-    { id: 't_quick', name: 'Quick Feet', type: 'talisman', displayType: 'Common Talisman', cost: 10, desc: 'Dodge 2 damage' },
-    { id: 't_pick', name: 'Pickpocket', type: 'talisman', displayType: 'Common Talisman', cost: 10, desc: '+2G on fist kill' },
-    { id: 't_coward', name: 'Cowards Luck', type: 'talisman', displayType: 'Common Talisman', cost: 10, desc: 'Heal 1 on leaving monster' },
-    { id: 't_blacksmith', name: 'Expert Blacksmith', type: 'talisman', displayType: 'Uncommon Talisman', cost: 10, desc: 'Weapons +3 dmg' },
-    { id: 't_scary', name: 'Scary Aura', type: 'talisman', displayType: 'Uncommon Talisman', cost: 10, desc: 'Scare monster <= 8' },
-    { id: 't_bounty', name: 'Bounty Hunter', type: 'talisman', displayType: 'Uncommon Talisman', cost: 10, desc: '+2G for kills >= 10' },
-    { id: 't_iron', name: 'Fists of Iron', type: 'talisman', displayType: 'Rare Talisman', cost: 10, desc: 'Fist dmg -3, Mult x4' },
-    { id: 't_blood', name: 'Blood Vial', type: 'talisman', displayType: 'Rare Talisman', cost: 10, desc: 'Excess heal to Shield' },
+    { id: 't_silver', name: 'Silver Blades', type: 'talisman', displayType: 'Common Talisman', cost: 4, desc: 'Weapons 2x Dmg vs Clubs' },
+    { id: 't_quick', name: 'Quick Feet', type: 'talisman', displayType: 'Common Talisman', cost: 4, desc: 'Dodge 2 damage' },
+    { id: 't_pick', name: 'Pickpocket', type: 'talisman', displayType: 'Common Talisman', cost: 4, desc: '+2G on fist kill' },
+    { id: 't_coward', name: 'Cowards Luck', type: 'talisman', displayType: 'Common Talisman', cost: 4, desc: 'Heal 1 on leaving monster' },
+    { id: 't_blacksmith', name: 'Expert Blacksmith', type: 'talisman', displayType: 'Uncommon Talisman', cost: 6, desc: 'Weapons +3 dmg' },
+    { id: 't_scary', name: 'Scary Aura', type: 'talisman', displayType: 'Uncommon Talisman', cost: 6, desc: 'Scare monster <= 8' },
+    { id: 't_bounty', name: 'Bounty Hunter', type: 'talisman', displayType: 'Uncommon Talisman', cost: 6, desc: '+2G for kills >= 10' },
+    { id: 't_iron', name: 'Fists of Iron', type: 'talisman', displayType: 'Rare Talisman', cost: 8, desc: 'Fist dmg -3, Mult x4' },
+    { id: 't_blood', name: 'Blood Vial', type: 'talisman', displayType: 'Rare Talisman', cost: 8, desc: 'Excess heal to Shield' },
     { id: 't_undying', name: 'Undying', type: 'talisman', displayType: 'Legendary Talisman', cost: 10, desc: 'Revive at 5HP (1 use)' },
     { id: 'c_shield', name: 'Shield', type: 'consumable', displayType: 'Uncommon Consumable', cost: 5, desc: '+5 Temp HP' },
     { id: 'c_smoke', name: 'Smokescreen', type: 'consumable', displayType: 'Uncommon Consumable', cost: 5, desc: 'Hide 1 monster' }
@@ -580,20 +580,20 @@ function renderSellItems() {
     talismans.forEach((t, index) => {
         const el = document.createElement('div');
         el.style = 'border: 1px solid #f38ba8; padding: 15px; border-radius: 8px; width: 140px; cursor: pointer; background: #313244; transition: 0.2s; display:flex; flex-direction:column; justify-content:space-between;';
-        el.innerHTML = `<h3 style="margin-top:0; color:#89b4fa; font-size:1rem; margin-bottom:5px;">${t.name}</h3><p style="font-size:0.75rem; color:#a6adc8; margin-top:0;">${t.desc}</p><div style="color:#a6e3a1; font-weight:bold; margin-top:10px;">Sell: 5 G</div>`;
+        el.innerHTML = `<h3 style="margin-top:0; color:#89b4fa; font-size:1rem; margin-bottom:5px;">${t.name}</h3><p style="font-size:0.75rem; color:#a6adc8; margin-top:0;">${t.desc}</p><div style="color:#a6e3a1; font-weight:bold; margin-top:10px;">Sell: ${Math.floor(t.cost / 2)} G</div>`;
         
         el.onmouseover = () => el.style.borderColor = '#a6e3a1';
         el.onmouseout = () => el.style.borderColor = '#f38ba8';
         
         el.onclick = () => {
-            gold += 5;
+            gold += Math.floor(t.cost / 2);
             talismans.splice(index, 1);
             // Put it back in the shop pool so they can buy it again later if they want
             shopDb.push(t);
             updateShopGold();
             updateUI();
             renderSellItems();
-            log("Shop: Sold " + t.name + " for 5G.");
+            log("Shop: Sold " + t.name + " for " + Math.floor(t.cost / 2) + "G.");
         };
         container.appendChild(el);
     });
