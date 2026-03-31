@@ -337,17 +337,17 @@ function playCard(index, useWeaponChoice = false) {
 
 
 
-const shopDb = [
-    { id: 't_silver', name: 'Silver Blades', type: 'talisman', displayType: 'Common Talisman', cost: 8, desc: 'Weapons 2x Dmg vs Clubs' },
-    { id: 't_quick', name: 'Quick Feet', type: 'talisman', displayType: 'Common Talisman', cost: 8, desc: 'Dodge 2 damage' },
-    { id: 't_pick', name: 'Pickpocket', type: 'talisman', displayType: 'Common Talisman', cost: 8, desc: '+2G on fist kill' },
-    { id: 't_coward', name: 'Cowards Luck', type: 'talisman', displayType: 'Common Talisman', cost: 8, desc: 'Heal 1 on leaving monster' },
-    { id: 't_blacksmith', name: 'Expert Blacksmith', type: 'talisman', displayType: 'Uncommon Talisman', cost: 12, desc: 'Weapons +3 dmg' },
-    { id: 't_scary', name: 'Scary Aura', type: 'talisman', displayType: 'Uncommon Talisman', cost: 12, desc: 'Scare monster <= 8' },
-    { id: 't_bounty', name: 'Bounty Hunter', type: 'talisman', displayType: 'Uncommon Talisman', cost: 12, desc: '+2G for kills >= 10' },
-    { id: 't_iron', name: 'Fists of Iron', type: 'talisman', displayType: 'Rare Talisman', cost: 20, desc: 'Fist dmg -3, Mult x4' },
-    { id: 't_blood', name: 'Blood Vial', type: 'talisman', displayType: 'Rare Talisman', cost: 20, desc: 'Excess heal to Shield' },
-    { id: 't_undying', name: 'Undying', type: 'talisman', displayType: 'Legendary Talisman', cost: 40, desc: 'Revive at 5HP (1 use)' },
+let shopDb = [
+    { id: 't_silver', name: 'Silver Blades', type: 'talisman', displayType: 'Common Talisman', cost: 10, desc: 'Weapons 2x Dmg vs Clubs' },
+    { id: 't_quick', name: 'Quick Feet', type: 'talisman', displayType: 'Common Talisman', cost: 10, desc: 'Dodge 2 damage' },
+    { id: 't_pick', name: 'Pickpocket', type: 'talisman', displayType: 'Common Talisman', cost: 10, desc: '+2G on fist kill' },
+    { id: 't_coward', name: 'Cowards Luck', type: 'talisman', displayType: 'Common Talisman', cost: 10, desc: 'Heal 1 on leaving monster' },
+    { id: 't_blacksmith', name: 'Expert Blacksmith', type: 'talisman', displayType: 'Uncommon Talisman', cost: 10, desc: 'Weapons +3 dmg' },
+    { id: 't_scary', name: 'Scary Aura', type: 'talisman', displayType: 'Uncommon Talisman', cost: 10, desc: 'Scare monster <= 8' },
+    { id: 't_bounty', name: 'Bounty Hunter', type: 'talisman', displayType: 'Uncommon Talisman', cost: 10, desc: '+2G for kills >= 10' },
+    { id: 't_iron', name: 'Fists of Iron', type: 'talisman', displayType: 'Rare Talisman', cost: 10, desc: 'Fist dmg -3, Mult x4' },
+    { id: 't_blood', name: 'Blood Vial', type: 'talisman', displayType: 'Rare Talisman', cost: 10, desc: 'Excess heal to Shield' },
+    { id: 't_undying', name: 'Undying', type: 'talisman', displayType: 'Legendary Talisman', cost: 10, desc: 'Revive at 5HP (1 use)' },
     { id: 'c_shield', name: 'Shield', type: 'consumable', displayType: 'Uncommon Consumable', cost: 5, desc: '+5 Temp HP' },
     { id: 'c_smoke', name: 'Smokescreen', type: 'consumable', displayType: 'Uncommon Consumable', cost: 5, desc: 'Hide 1 monster' }
 ];
@@ -468,6 +468,7 @@ function buyItem(item, el, free = false) {
             return;
         }
         talismans.push(item);
+            shopDb = shopDb.filter(i => i.id !== item.id);
     } else if (item.type === 'weapon' || item.type === 'potion') {
         extraCards.push({ suit: item.cardData.suit, value: item.cardData.value, display: item.cardData.display });
     }
