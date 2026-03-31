@@ -375,12 +375,12 @@ let shopDb = [
 ];
 
 const magicDb = [
-    { id: 'm_bank', name: 'Bank Gold', type: 'magic', displayType: 'Magic Item', cost: 30, desc: 'Earn interest on gold' },
-    { id: 'm_belt', name: 'Talisman Belt', type: 'magic', displayType: 'Magic Item', cost: 30, desc: '+1 Talisman Capacity' },
-    { id: 'm_evasion', name: 'Evasion Tactics', type: 'magic', displayType: 'Magic Item', cost: 30, desc: 'Skip 2 rooms in a row' },
-    { id: 'm_flask', name: 'Bottomless Flask', type: 'magic', displayType: 'Magic Item', cost: 30, desc: 'Drink 2 potions per room' },
-    { id: 'm_key', name: 'Master Key', type: 'magic', displayType: 'Magic Item', cost: 30, desc: 'Pick 2 items from Chests' },
-    { id: 'm_arcane', name: 'Arcane Supplier', type: 'magic', displayType: 'Magic Item', cost: 30, desc: 'More Rare Consumables' }
+    { id: 'm_bank', name: 'Bank Gold', type: 'magic', displayType: 'Magic Item', cost: 25, desc: 'Earn interest on gold' },
+    { id: 'm_belt', name: 'Talisman Belt', type: 'magic', displayType: 'Magic Item', cost: 25, desc: '+1 Talisman Capacity' },
+    { id: 'm_evasion', name: 'Evasion Tactics', type: 'magic', displayType: 'Magic Item', cost: 25, desc: 'Skip 2 rooms in a row' },
+    { id: 'm_flask', name: 'Bottomless Flask', type: 'magic', displayType: 'Magic Item', cost: 25, desc: 'Drink 2 potions per room' },
+    { id: 'm_key', name: 'Master Key', type: 'magic', displayType: 'Magic Item', cost: 25, desc: 'Pick 2 items from Chests' },
+    { id: 'm_arcane', name: 'Arcane Supplier', type: 'magic', displayType: 'Magic Item', cost: 25, desc: 'More Rare Consumables' }
 ];
 
 function rollMagicItem() {
