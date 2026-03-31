@@ -237,24 +237,25 @@ function playCard(index, useWeaponChoice = false) {
     
     if (type === 'potion') {
         if (potionUsedThisTurn && !(typeof hasTalisman === 'function' && hasTalisman('m_flask'))) {
-            log("Already drank a potion this room! Ignoring.");
-            return;
-        }
-        const heal = card.value;
-        if (hp + heal > 20) {
-            const excess = (hp + heal) - 20;
-            hp = 20;
-            if (typeof hasTalisman === 'function' && hasTalisman('t_blood')) {
-                shieldHp += excess;
-                log('Blood Vial: Converted ' + excess + ' excess healing to Shield HP!');
-            } else {
-                log('Drank potion. HP full.');
-            }
+            log("Already drank a potion this room! Potion wasted.");
+            // Do not return. Let it fall through to be marked as played.
         } else {
-            hp += heal;
-            log('Drank potion. Restored ' + heal + ' HP.');
+            const heal = card.value;
+            if (hp + heal > 20) {
+                const excess = (hp + heal) - 20;
+                hp = 20;
+                if (typeof hasTalisman === 'function' && hasTalisman('t_blood')) {
+                    shieldHp += excess;
+                    log('Blood Vial: Converted ' + excess + ' excess healing to Shield HP!');
+                } else {
+                    log('Drank potion. HP full.');
+                }
+            } else {
+                hp += heal;
+                log('Drank potion. Restored ' + heal + ' HP.');
+            }
+            potionUsedThisTurn = true;
         }
-        potionUsedThisTurn = true;
     } 
     else if (type === 'weapon') {
         currentWeaponValue = card.value;
