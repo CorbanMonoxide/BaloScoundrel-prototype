@@ -118,7 +118,7 @@ function initGame() {
     extraCards = [];
     document.getElementById('log').innerHTML = '';
     log("Game started. Entering Dungeon 1, Chamber 1.");
-    openShop();
+    startChamber();
 }
 
 function startChamber() {
