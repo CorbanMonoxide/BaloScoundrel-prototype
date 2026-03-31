@@ -18,6 +18,7 @@ let cardsPlayedThisRoom = 0;
 let fledLastRoom = false;
 let potionUsedThisTurn = false;
 let gameOver = false;
+let currentItem = null;
 let currentMagicItem = null;
 let magicPurchasedThisDungeon = false;
 let currentChestCost = 5;
@@ -44,6 +45,7 @@ function updateUI() {
     document.getElementById('gold').innerText = gold;
     document.getElementById('mult').innerText = currentWeaponValue ? currentWeaponValue + 'x' : '1x';
     document.getElementById('weapon').innerText = currentWeaponValue ? '♦ ' + currentWeaponValue + ' (Max: ' + currentWeaponLimit + ')' : 'None';
+    document.getElementById('item').innerText = currentItem ? currentItem.name : 'None';
     document.getElementById('deck-count').innerText = deck.length;
     const tUI = document.getElementById('talismans-ui');
     tUI.innerText = talismans.length + '/4';
@@ -100,6 +102,7 @@ function updateUI() {
     });
 
     document.getElementById('btn-flee').disabled = gameOver || fledLastRoom || cardsPlayedThisRoom > 0;
+    document.getElementById('btn-use-item').disabled = gameOver || !currentItem;
     document.getElementById('btn-next').disabled = gameOver || currentRoom.filter(c => !c.played).length > 1;
 }
 
@@ -138,6 +141,7 @@ function initGame() {
     shieldHp = 0;
     talismans = [];
     extraCards = [];
+    currentItem = null;
     rollMagicItem();
     document.getElementById('log').innerHTML = '';
     log("Game started. Entering Dungeon 1, Chamber 1.");
@@ -593,4 +597,34 @@ function renderSellItems() {
         };
         container.appendChild(el);
     });
+}
+
+function useItem() {
+    if (gameOver || !currentItem) return;
+    
+    if (currentItem.id === 'c_shield') {
+        shieldHp += 5;
+        log('Used Shield! Gained 5 Temp HP.');
+        currentItem = null;
+        updateUI();
+    } else if (currentItem.id === 'c_smoke') {
+        let targetIdx = -1;
+        let maxVal = -1;
+        currentRoom.forEach((c, i) => {
+            if (!c.played && suits[c.suit].type === 'monster' && c.value > maxVal) {
+                maxVal = c.value;
+                targetIdx = i;
+            }
+        });
+        
+        if (targetIdx !== -1) {
+            let hiddenCard = currentRoom.splice(targetIdx, 1)[0];
+            deck.unshift(hiddenCard);
+            log('Used Smokescreen! Hid the ' + hiddenCard.display + ' Monster (sent to bottom of deck).');
+            currentItem = null;
+            updateUI();
+        } else {
+            log('No monsters to hide! Item not used.');
+        }
+    }
 }
