@@ -408,7 +408,7 @@ function createItemCard(item, onClickCallback, free = false) {
     
     el.innerHTML = `
         <div style="width: 100%; text-align: center;">
-            <h3 style="margin-top:0; margin-bottom: 2px; color:#89b4fa; font-size:1.1rem;">${item.name}</h3>
+            <h3 style="margin-top:0; margin-bottom: 2px; color:#89b4fa; font-size:1.1rem;">${item.name}</h3><span style='font-size:0.7rem; color:#f5c2e7;'>${item.rarity ? item.rarity.toUpperCase() : ''}</span>
             <div style="font-size: 0.7rem; color: #f38ba8; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px;">${item.displayType}</div>
             ${visualHtml}
             <p style="font-size:0.8rem; color:#a6adc8; margin-top:5px; margin-bottom:0;">${item.desc}</p>
@@ -615,13 +615,18 @@ function useItem() {
         }
     }
 }const shopDb = [
-    { id: 't_silver', name: 'Silver Blades', type: 'talisman', displayType: 'Talisman', cost: 8, desc: '+Dmg vs Clubs (WIP)' },
-    { id: 't_quick', name: 'Quick Feet', type: 'talisman', displayType: 'Talisman', cost: 8, desc: 'Dodge 2 dmg (WIP)' },
-    { id: 't_pick', name: 'Pickpocket', type: 'talisman', displayType: 'Talisman', cost: 8, desc: '+2G on fist kill (WIP)' },
-    { id: 't_coward', name: 'Cowards Luck', type: 'talisman', displayType: 'Talisman', cost: 8, desc: 'Heal 1 on leave (WIP)' },
-    { id: 'm_bank', name: 'Bank Gold', type: 'magic', displayType: 'Magic Item', cost: 30, desc: 'Earn interest on gold (WIP)' },
-    { id: 'c_shield', name: 'Shield', type: 'consumable', displayType: 'Consumable', cost: 5, desc: '+5 Temp HP (WIP)' },
-    { id: 'c_smoke', name: 'Smokescreen', type: 'consumable', displayType: 'Consumable', cost: 5, desc: 'Hide 1 monster (WIP)' }
+    { id: 't_silver', name: 'Silver Blades', type: 'talisman', rarity: 'common', cost: 4, desc: 'Weapons 2x Dmg vs Clubs (Vampires)' },
+    { id: 't_quick', name: 'Quick Feet', type: 'talisman', rarity: 'common', cost: 4, desc: 'Dodge 2 damage from every attack' },
+    { id: 't_pick', name: 'Pickpocket', type: 'talisman', rarity: 'common', cost: 4, desc: '+2G on every barehanded kill' },
+    { id: 't_coward', name: 'Cowards Luck', type: 'talisman', rarity: 'common', cost: 4, desc: 'Heal 1 HP if monster is left behind' },
+    { id: 't_blacksmith', name: 'Expert Blacksmith', type: 'talisman', rarity: 'uncommon', cost: 6, desc: 'All Weapons deal +3 damage' },
+    { id: 't_scary', name: 'Scary Aura', type: 'talisman', rarity: 'uncommon', cost: 6, desc: 'Scare 1 monster (<=8) to bottom of deck' },
+    { id: 't_bounty', name: 'Bounty Hunter', type: 'talisman', rarity: 'uncommon', cost: 6, desc: '+2 Gold for kills >= 10' },
+    { id: 't_iron', name: 'Fists of Iron', type: 'talisman', rarity: 'rare', cost: 8, desc: 'Fist dmg -3, Mult x4' },
+    { id: 't_blood', name: 'Blood Vial', type: 'talisman', rarity: 'rare', cost: 8, desc: 'Excess heal to Shield HP' },
+    { id: 't_undying', name: 'Undying', type: 'talisman', rarity: 'rare', cost: 10, desc: 'Revive at 5HP (Destroyed on use)' },
+    { id: 'c_shield', name: 'Shield', type: 'consumable', cost: 5, desc: 'Single-use: +5 Temp HP' },
+    { id: 'c_smoke', name: 'Smokescreen', type: 'consumable', cost: 5, desc: 'Single-use: Hide 1 monster' }
 ];
 
 function openShop() {
@@ -681,7 +686,7 @@ function openShop() {
         
         el.innerHTML = `
             <div style="width: 100%; text-align: center;">
-                <h3 style="margin-top:0; margin-bottom: 2px; color:#89b4fa; font-size:1.1rem;">${item.name}</h3>
+                <h3 style="margin-top:0; margin-bottom: 2px; color:#89b4fa; font-size:1.1rem;">${item.name}</h3><span style='font-size:0.7rem; color:#f5c2e7;'>${item.rarity ? item.rarity.toUpperCase() : ''}</span>
                 <div style="font-size: 0.7rem; color: #f38ba8; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px;">${item.displayType}</div>
                 ${visualHtml}
                 <p style="font-size:0.8rem; color:#a6adc8; margin-top:5px; margin-bottom:0;">${item.desc}</p>
