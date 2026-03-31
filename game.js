@@ -17,6 +17,8 @@ let cardsPlayedThisRoom = 0;
 let fledLastRoom = false;
 let potionUsedThisTurn = false;
 let gameOver = false;
+let talismans = [];
+let extraCards = [];
 
 const suits = {
     'Spades': { symbol: '♠', type: 'monster' },
@@ -39,6 +41,7 @@ function updateUI() {
     document.getElementById('mult').innerText = currentWeaponValue ? currentWeaponMult + 'x' : '1x';
     document.getElementById('weapon').innerText = currentWeaponValue ? '♦ ' + currentWeaponValue + ' (Max: ' + currentWeaponLimit + ')' : 'None';
     document.getElementById('deck-count').innerText = deck.length;
+    document.getElementById('talismans-ui').innerText = talismans.length + '/4';
     
     document.getElementById('target').innerText = targetScore + ' (D' + currentDungeon + 'C' + currentChamber + ')';
     
@@ -97,6 +100,8 @@ function buildDeck() {
         }
     }
     
+    extraCards.forEach(c => deck.push({...c}));
+    
     for (let i = deck.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [deck[i], deck[j]] = [deck[j], deck[i]];
@@ -109,9 +114,11 @@ function initGame() {
     hp = 20;
     score = 0;
     gold = 0;
+    talismans = [];
+    extraCards = [];
     document.getElementById('log').innerHTML = '';
     log("Game started. Entering Dungeon 1, Chamber 1.");
-    startChamber();
+    openShop();
 }
 
 function startChamber() {
@@ -172,7 +179,7 @@ function nextChamber() {
         currentDungeon++;
         log('🎉 DUNGEON CLEARED! Moving to Dungeon ' + currentDungeon);
     }
-    startChamber();
+    openShop();
 }
 
 function playCard(index, useWeaponChoice = false) {
@@ -259,3 +266,68 @@ function playCard(index, useWeaponChoice = false) {
 }
 
 initGame();
+
+const shopDb = [
+    { id: 't_silver', name: 'Silver Blades', type: 'talisman', cost: 8, desc: 'Common: +Dmg vs Clubs (WIP)' },
+    { id: 't_quick', name: 'Quick Feet', type: 'talisman', cost: 8, desc: 'Common: Dodge 2 dmg (WIP)' },
+    { id: 't_pick', name: 'Pickpocket', type: 'talisman', cost: 8, desc: 'Common: +2G on fist kill (WIP)' },
+    { id: 't_coward', name: 'Cowards Luck', type: 'talisman', cost: 8, desc: 'Common: Heal 1 on leave (WIP)' },
+    { id: 'c_potion', name: 'Extra Potion', type: 'consumable', cost: 3, desc: 'Common: Adds +1 Potion to deck permanently' },
+    { id: 'c_shield', name: 'Shield', type: 'consumable', cost: 5, desc: 'Uncommon: +5 Temp HP (WIP)' }
+];
+
+function openShop() {
+    document.getElementById('game-screen').style.display = 'none';
+    document.getElementById('shop-screen').style.display = 'block';
+    document.getElementById('shop-gold').innerText = gold;
+    
+    const shopDiv = document.getElementById('shop-items');
+    shopDiv.innerHTML = '';
+    
+    // Draft 3 random items
+    let items = [];
+    for(let i=0; i<3; i++) {
+        items.push(shopDb[Math.floor(Math.random() * shopDb.length)]);
+    }
+    
+    items.forEach((item, index) => {
+        const el = document.createElement('div');
+        el.style = 'border: 1px solid #cba6f7; padding: 15px; border-radius: 8px; width: 160px; cursor: pointer; background: #313244; display: flex; flex-direction: column; justify-content: space-between; transition: 0.2s;';
+        el.innerHTML = `<div><h3 style="margin-top:0; margin-bottom: 5px; color:#89b4fa; font-size:1.1rem;">${item.name}</h3><p style="font-size:0.8rem; color:#a6adc8; margin-top:0;">${item.desc}</p></div><div style="margin-top:10px; font-weight:bold; color:#f9e2af; font-size:1.2rem;">${item.cost} G</div>`;
+        
+        el.onmouseover = () => el.style.borderColor = '#a6e3a1';
+        el.onmouseout = () => el.style.borderColor = '#cba6f7';
+        
+        el.onclick = () => buyItem(item, index, el);
+        shopDiv.appendChild(el);
+    });
+}
+
+function buyItem(item, index, el) {
+    if (gold >= item.cost) {
+        if (item.type === 'talisman') {
+            if (talismans.length >= 4) {
+                log("Shop: Talisman slots full! (4/4)");
+                return;
+            }
+            talismans.push(item);
+        } else if (item.id === 'c_potion') {
+            extraCards.push({ suit: 'Hearts', value: 10, display: '10' }); // Standard Potion is 10
+        }
+        gold -= item.cost;
+        document.getElementById('shop-gold').innerText = gold;
+        document.getElementById('gold').innerText = gold;
+        el.style.display = 'none'; // remove from shop visually
+        log("Shop: Bought " + item.name + " for " + item.cost + "G.");
+        updateUI(); // refresh talismans count
+    } else {
+        log("Shop: Not enough gold for " + item.name + "!");
+    }
+}
+
+function closeShop() {
+    log("Exited shop.");
+    document.getElementById('shop-screen').style.display = 'none';
+    document.getElementById('game-screen').style.display = 'block';
+    startChamber();
+}

@@ -34,6 +34,7 @@
 
     <h1>Scoundrel Balatro: Grey-Box Prototype</h1>
     
+    <div id="game-screen">
     <div id="stats">
         <div class="stat"><span class="label">Target Score</span><span id="target">5000</span></div>
         <div class="stat"><span class="label">Score</span><span id="score">0</span></div>
@@ -42,6 +43,7 @@
         <div class="stat"><span class="label">HP</span><span id="hp">20 / 20</span></div>
         <div class="stat"><span class="label">Gold</span><span id="gold">0</span></div>
         <div class="stat"><span class="label">Deck</span><span id="deck-count">44</span></div>
+        <div class="stat"><span class="label">Talismans</span><span id="talismans-ui">0/4</span></div>
     </div>
 
     <h2>Current Room</h2>
@@ -52,7 +54,16 @@
         <button id="btn-next" onclick="drawRoom()" disabled>Next Room</button>
         <button id="btn-restart" onclick="initGame()">Restart</button>
     </div>
+    </div>
 
+    
+    <div id="shop-screen" style="display:none; background: #181825; border: 2px solid #cba6f7; border-radius: 8px; padding: 20px; margin-bottom: 20px; margin-top: 20px;">
+        <h2 style="margin-top: 0; color: #f9e2af;">Scoundrel Shop</h2>
+        <div style="margin-bottom: 20px; font-size: 1.2rem;">Gold: <span id="shop-gold" style="color: #f9e2af; font-weight: bold;">0</span></div>
+        <div id="shop-items" style="display:flex; justify-content:center; gap: 20px; margin-bottom:20px; flex-wrap: wrap;"></div>
+        <button onclick="closeShop()" style="background: #a6e3a1;">Next Chamber</button>
+    </div>
+    
     <div id="log"></div>
 
     <script src="game.js"></script>
