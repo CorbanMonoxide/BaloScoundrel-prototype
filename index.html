@@ -6,7 +6,7 @@
 <title>Scoundrel Balatro Prototype</title>
 <style>
     body { font-family: monospace; background-color: #1e1e2e; color: #cdd6f4; margin: 20px; text-align: center; }
-    #stats { display: flex; justify-content: space-around; background: #313244; padding: 15px; border-radius: 8px; margin-bottom: 20px; font-size: 1.2rem; }
+    .stats-bar { display: flex; justify-content: space-around; background: #313244; padding: 15px; border-radius: 8px; margin-bottom: 20px; font-size: 1.2rem; }
     .stat { display: flex; flex-direction: column; }
     .label { font-size: 0.8rem; color: #a6adc8; text-transform: uppercase; }
     #room { display: flex; justify-content: center; gap: 15px; margin: 40px 0; min-height: 144px; }
@@ -35,15 +35,12 @@
     <h1>Scoundrel Balatro: Grey-Box Prototype</h1>
     
     <div id="game-screen">
-    <div id="stats">
+    <div id="top-stats" class="stats-bar">
         <div class="stat"><span class="label">Target Score</span><span id="target">5000</span></div>
         <div class="stat"><span class="label">Score</span><span id="score">0</span></div>
         <div class="stat"><span class="label">Multiplier</span><span id="mult">1x</span></div>
-        <div class="stat"><span class="label">Weapon</span><span id="weapon">None</span></div>
-        <div class="stat"><span class="label">HP</span><span id="hp">20 / 20</span></div>
         <div class="stat"><span class="label">Gold</span><span id="gold">0</span></div>
         <div class="stat"><span class="label">Deck</span><span id="deck-count">44</span></div>
-        <div class="stat"><span class="label">Talismans</span><span id="talismans-ui">0/4</span></div>
     </div>
 
     <h2>Current Room</h2>
@@ -53,6 +50,13 @@
         <button id="btn-flee" onclick="fleeRoom()">Flee Room</button>
         <button id="btn-next" onclick="drawRoom()" disabled>Next Room</button>
         <button id="btn-restart" onclick="initGame()">Restart</button>
+    </div>
+
+    <div id="bottom-stats" class="stats-bar" style="margin-top: 40px; margin-bottom: 0;">
+        <div class="stat"><span class="label">Weapon</span><span id="weapon">None</span></div>
+        <div class="stat"><span class="label">Item</span><span id="item">None</span></div>
+        <div class="stat"><span class="label">Talismans</span><span id="talismans-ui">0/4</span></div>
+        <div class="stat"><span class="label">HP</span><span id="hp">20 / 20</span></div>
     </div>
     </div>
 
