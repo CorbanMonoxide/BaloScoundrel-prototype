@@ -170,10 +170,7 @@ function startChamber() {
     
     log('--- Dungeon ' + currentDungeon + ' Chamber ' + currentChamber + ' ---');
     log('Target Score: ' + targetScore);
-    
-    // Show booster pack selection at start of chamber
-    generateBoosterPacks();
-    showPackSelectionUI();
+    drawRoom();
 }
 
 function drawRoom() {
@@ -312,7 +309,23 @@ function selectBoosterCard(index) {
     
     document.getElementById('game-screen').style.display = 'block';
     updateUI();
-    drawRoom(); // Start the chamber after selecting booster pack
+    
+    // Check if this booster pack came between rooms (after score reached)
+    if (window.boosterCardThenNextChamber) {
+        window.boosterCardThenNextChamber = false;
+        nextChamber();
+    } else {
+        drawRoom();
+    }
+}
+
+function showBoosterPackBetweenRooms() {
+    // Show booster pack after reaching score, before next chamber
+    generateBoosterPack();
+    showBoosterPackUI();
+    
+    // Override the selectBoosterCard to continue to next chamber
+    window.boosterCardThenNextChamber = true;
 }
 
 function nextChamber() {
@@ -449,7 +462,7 @@ function playCard(index, useWeaponChoice = false) {
         currentRoom.forEach(c => c.played = true);
         
         setTimeout(() => {
-            nextChamber();
+            showBoosterPackBetweenRooms();
         }, 1500);
     }
 
