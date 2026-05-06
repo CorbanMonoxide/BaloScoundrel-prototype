@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Booster Test</title>
+</head>
+<body>
+    <script>
+        // Mock the game state
+        let pendingBoosterPack = null;
+        
+        function generateBoosterPack() {
+            let packCards = [];
+            for (let i = 0; i < 3; i++) {
+                let isWeapon = Math.random() < 0.5;
+                let val = Math.floor(Math.random() * 9) + 2;
+                
+                if (isWeapon) {
+                    packCards.push({
+                        suit: 'Diamonds',
+                        value: val,
+                        display: val.toString(),
+                        name: 'Weapon ' + val,
+                        type: 'weapon'
+                    });
+                } else {
+                    packCards.push({
+                        suit: 'Hearts',
+                        value: val,
+                        display: val.toString(),
+                        name: 'Potion ' + val,
+                        type: 'potion'
+                    });
+                }
+            }
+            pendingBoosterPack = packCards;
+        }
+        
+        // Test
+        generateBoosterPack();
+        console.log('Generated booster pack:', pendingBoosterPack);
+        alert('Booster pack generated: ' + JSON.stringify(pendingBoosterPack, null, 2));
+    </script>
+</body>
+</html>

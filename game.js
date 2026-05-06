@@ -24,6 +24,7 @@ let magicPurchasedThisDungeon = false;
 let currentChestCost = 5;
 let talismans = [];
 let extraCards = [];
+let pendingBoosterPack = null;
 
 const suits = {
     'Spades': { symbol: '♠', type: 'monster' },
@@ -184,6 +185,9 @@ function drawRoom() {
     
     const unplayed = currentRoom.filter(c => !c.played);
     
+    // Check if this is a room completion (all cards cleared, not end of deck)
+    const roomCompleted = unplayed.length === 0 && deck.length > 0;
+    
     if (unplayed.length === 1 && suits[unplayed[0].suit].type === 'monster' && !fledLastRoom && cardsPlayedThisRoom > 0) {
         if (typeof hasTalisman === 'function' && hasTalisman('t_coward')) {
             hp = Math.min(20, hp + 1);
@@ -210,6 +214,14 @@ function drawRoom() {
     
     cardsPlayedThisRoom = 0;
     potionUsedThisTurn = false;
+    
+    // If room was just completed, chance for booster pack
+    if (roomCompleted && Math.random() < 0.6) {
+        generateBoosterPack();
+        showBoosterPackUI();
+        return; // Pause here until player selects a card
+    }
+    
     updateUI();
 }
 
@@ -222,6 +234,90 @@ function fleeRoom() {
     currentRoom = [];
     fledLastRoom = true;
     drawRoom();
+}
+
+function generateBoosterPack() {
+    // Generate 3 random cards for the booster pack
+    let packCards = [];
+    for (let i = 0; i < 3; i++) {
+        let isWeapon = Math.random() < 0.5;
+        let val = Math.floor(Math.random() * 9) + 2; // Value 2 to 10
+        
+        if (isWeapon) {
+            packCards.push({
+                suit: 'Diamonds',
+                value: val,
+                display: val.toString(),
+                name: 'Weapon ' + val,
+                type: 'weapon'
+            });
+        } else {
+            packCards.push({
+                suit: 'Hearts',
+                value: val,
+                display: val.toString(),
+                name: 'Potion ' + val,
+                type: 'potion'
+            });
+        }
+    }
+    pendingBoosterPack = packCards;
+}
+
+function showBoosterPackUI() {
+    document.getElementById('game-screen').style.display = 'none';
+    let boosterDiv = document.getElementById('booster-screen');
+    if (!boosterDiv) {
+        boosterDiv = document.createElement('div');
+        boosterDiv.id = 'booster-screen';
+        document.body.appendChild(boosterDiv);
+    }
+    
+    boosterDiv.style = 'background: #181825; border: 3px solid #f9e2af; border-radius: 8px; padding: 30px; margin: 20px auto; max-width: 800px; text-align: center;';
+    boosterDiv.innerHTML = `
+        <h2 style="margin-top: 0; color: #f9e2af;">⭐ BOOSTER PACK DROPPED! ⭐</h2>
+        <p style="color: #a6adc8; font-size: 1.1rem; margin-bottom: 30px;">Choose 1 card to add to your deck:</p>
+        <div id="booster-cards" style="display: flex; justify-content: center; gap: 20px; flex-wrap: wrap; margin-bottom: 30px;"></div>
+    `;
+    
+    const cardsDiv = document.getElementById('booster-cards');
+    pendingBoosterPack.forEach((card, index) => {
+        const cardEl = document.createElement('div');
+        let symbol = card.type === 'weapon' ? '♦' : '♥';
+        let cssClass = card.type === 'weapon' ? 'weapon' : 'potion';
+        let suitColor = card.type === 'weapon' ? '#e53935' : '#e53935';
+        
+        cardEl.style = 'border: 2px solid #cba6f7; padding: 20px; border-radius: 8px; cursor: pointer; background: #313244; transition: 0.2s; flex: 0 0 auto;';
+        cardEl.innerHTML = `
+            <div class="card ${cssClass}" style="margin: 10px auto; width: 100px; height: 140px; display: flex; align-items: center; justify-content: center; pointer-events: none;">
+                <div style="margin-top: 15px;"><span style="color:${suitColor};">${symbol}</span> <span style="color:#000000;">${card.display}</span></div>
+            </div>
+            <p style="color: #a6adc8; margin-top: 10px; margin-bottom: 0;">${card.name}</p>
+        `;
+        
+        cardEl.onmouseover = () => cardEl.style.borderColor = '#a6e3a1';
+        cardEl.onmouseout = () => cardEl.style.borderColor = '#cba6f7';
+        
+        cardEl.onclick = () => selectBoosterCard(index);
+        cardsDiv.appendChild(cardEl);
+    });
+}
+
+function selectBoosterCard(index) {
+    if (!pendingBoosterPack || index < 0 || index >= pendingBoosterPack.length) return;
+    
+    let selectedCard = pendingBoosterPack[index];
+    extraCards.push(selectedCard);
+    
+    log("⭐ Added " + selectedCard.name + " from Booster Pack!");
+    
+    pendingBoosterPack = null;
+    let boosterDiv = document.getElementById('booster-screen');
+    if (boosterDiv) boosterDiv.style.display = 'none';
+    
+    document.getElementById('game-screen').style.display = 'block';
+    updateUI();
+    drawRoom(); // Continue to next room
 }
 
 function nextChamber() {
@@ -248,24 +344,24 @@ function playCard(index, useWeaponChoice = false) {
     const type = suits[card.suit].type;
     
     if (type === 'potion') {
-        if (potionUsedThisTurn && !(typeof hasTalisman === 'function' && hasTalisman('m_flask'))) {
-            log("Already drank a potion this room! Ignoring.");
-            return;
-        }
-        const heal = card.value;
-        if (hp + heal > 20) {
-            const excess = (hp + heal) - 20;
-            hp = 20;
-            if (typeof hasTalisman === 'function' && hasTalisman('t_blood')) {
-                shieldHp += excess;
-                log('Blood Vial: Converted ' + excess + ' excess healing to Shield HP!');
+        // Only heal if no potion used yet (unless you have Bottomless Flask)
+        if (!potionUsedThisTurn || (typeof hasTalisman === 'function' && hasTalisman('m_flask'))) {
+            const heal = card.value;
+            if (hp + heal > 20) {
+                const excess = (hp + heal) - 20;
+                hp = 20;
+                if (typeof hasTalisman === 'function' && hasTalisman('t_blood')) {
+                    shieldHp += excess;
+                    log('Blood Vial: Converted ' + excess + ' excess healing to Shield HP!');
+                } else {
+                    log('Drank potion. HP full.');
+                }
             } else {
-                log('Drank potion. HP full.');
+                hp += heal;
+                log('Drank potion. Restored ' + heal + ' HP.');
             }
-        } else {
-            hp += heal;
-            log('Drank potion. Restored ' + heal + ' HP.');
         }
+        // Silently discard if already used a potion this room
         potionUsedThisTurn = true;
     } 
     else if (type === 'weapon') {
