@@ -32,6 +32,30 @@ const suits = {
     'Hearts': { symbol: '♥', type: 'potion' }
 };
 
+const magicDb = [
+    { id: 'm_bank', name: 'Bank Gold', type: 'magic', displayType: 'Magic Item', cost: 25, desc: 'Earn interest on gold' },
+    { id: 'm_belt', name: 'Talisman Belt', type: 'magic', displayType: 'Magic Item', cost: 25, desc: '+1 Talisman Capacity' },
+    { id: 'm_evasion', name: 'Evasion Tactics', type: 'magic', displayType: 'Magic Item', cost: 25, desc: 'Skip 2 rooms in a row' },
+    { id: 'm_flask', name: 'Bottomless Flask', type: 'magic', displayType: 'Magic Item', cost: 25, desc: 'Drink 2 potions per room' },
+    { id: 'm_key', name: 'Master Key', type: 'magic', displayType: 'Magic Item', cost: 25, desc: 'Pick 2 items from Chests' },
+    { id: 'm_arcane', name: 'Arcane Supplier', type: 'magic', displayType: 'Magic Item', cost: 25, desc: 'More Rare Consumables' }
+];
+
+const shopDb = [
+    { id: 't_silver', name: 'Silver Blades', type: 'talisman', rarity: 'common', cost: 4, desc: 'Weapons 2x Dmg vs Clubs (Vampires)' },
+    { id: 't_quick', name: 'Quick Feet', type: 'talisman', rarity: 'common', cost: 4, desc: 'Dodge 2 damage from every attack' },
+    { id: 't_pick', name: 'Pickpocket', type: 'talisman', rarity: 'common', cost: 4, desc: '+2G on every barehanded kill' },
+    { id: 't_coward', name: 'Cowards Luck', type: 'talisman', rarity: 'common', cost: 4, desc: 'Heal 1 HP if monster is left behind' },
+    { id: 't_blacksmith', name: 'Expert Blacksmith', type: 'talisman', rarity: 'uncommon', cost: 6, desc: 'All Weapons deal +3 damage' },
+    { id: 't_scary', name: 'Scary Aura', type: 'talisman', rarity: 'uncommon', cost: 6, desc: 'Scare 1 monster (<=8) to bottom of deck' },
+    { id: 't_bounty', name: 'Bounty Hunter', type: 'talisman', rarity: 'uncommon', cost: 6, desc: '+2 Gold for kills >= 10' },
+    { id: 't_iron', name: 'Fists of Iron', type: 'talisman', rarity: 'rare', cost: 8, desc: 'Fist dmg -3, Mult x4' },
+    { id: 't_blood', name: 'Blood Vial', type: 'talisman', rarity: 'rare', cost: 8, desc: 'Excess heal to Shield HP' },
+    { id: 't_undying', name: 'Undying', type: 'talisman', rarity: 'rare', cost: 10, desc: 'Revive at 5HP (Destroyed on use)' },
+    { id: 'c_shield', name: 'Shield', type: 'consumable', cost: 5, desc: 'Single-use: +5 Temp HP' },
+    { id: 'c_smoke', name: 'Smokescreen', type: 'consumable', cost: 5, desc: 'Single-use: Hide 1 monster' }
+];
+
 function log(msg) {
     const logDiv = document.getElementById('log');
     const entry = document.createElement('div');
@@ -49,6 +73,8 @@ function updateUI() {
     document.getElementById('talismans-ui').innerText = talismans.length + '/4';
     
     document.getElementById('target').innerText = targetScore + ' (D' + currentDungeon + 'C' + currentChamber + ')';
+    document.getElementById('btn-use-item').style.display = currentItem ? 'block' : 'none';
+    document.getElementById('item').innerText = currentItem ? currentItem.name : 'None';
     
     const roomDiv = document.getElementById('room');
     roomDiv.innerHTML = '';
@@ -184,12 +210,13 @@ function drawRoom() {
     
     cardsPlayedThisRoom = 0;
     potionUsedThisTurn = false;
-    fledLastRoom = false;
     updateUI();
 }
 
 function fleeRoom() {
-    if (gameOver || fledLastRoom || cardsPlayedThisRoom > 0) return;
+    if (gameOver || fledLastRoom || cardsPlayedThisRoom > 0) {
+        return;
+    }
     log("Fled the room! Scooped all cards to the bottom of the deck.");
     currentRoom.forEach(c => deck.unshift(c)); 
     currentRoom = [];
@@ -312,6 +339,7 @@ function playCard(index, useWeaponChoice = false) {
 
     card.played = true;
     cardsPlayedThisRoom++;
+    fledLastRoom = false;
     
     if (hp <= 0 && typeof hasTalisman === 'function' && hasTalisman('t_undying')) {
         hp = 5;
@@ -340,29 +368,7 @@ function playCard(index, useWeaponChoice = false) {
 
 
 
-let shopDb = [
-    { id: 't_silver', name: 'Silver Blades', type: 'talisman', displayType: 'Common Talisman', cost: 4, desc: 'Weapons 2x Dmg vs Clubs' },
-    { id: 't_quick', name: 'Quick Feet', type: 'talisman', displayType: 'Common Talisman', cost: 4, desc: 'Dodge 2 damage' },
-    { id: 't_pick', name: 'Pickpocket', type: 'talisman', displayType: 'Common Talisman', cost: 4, desc: '+2G on fist kill' },
-    { id: 't_coward', name: 'Cowards Luck', type: 'talisman', displayType: 'Common Talisman', cost: 4, desc: 'Heal 1 on leaving monster' },
-    { id: 't_blacksmith', name: 'Expert Blacksmith', type: 'talisman', displayType: 'Uncommon Talisman', cost: 6, desc: 'Weapons +3 dmg' },
-    { id: 't_scary', name: 'Scary Aura', type: 'talisman', displayType: 'Uncommon Talisman', cost: 6, desc: 'Scare monster <= 8' },
-    { id: 't_bounty', name: 'Bounty Hunter', type: 'talisman', displayType: 'Uncommon Talisman', cost: 6, desc: '+2G for kills >= 10' },
-    { id: 't_iron', name: 'Fists of Iron', type: 'talisman', displayType: 'Rare Talisman', cost: 8, desc: 'Fist dmg -3, Mult x4' },
-    { id: 't_blood', name: 'Blood Vial', type: 'talisman', displayType: 'Rare Talisman', cost: 8, desc: 'Excess heal to Shield' },
-    { id: 't_undying', name: 'Undying', type: 'talisman', displayType: 'Legendary Talisman', cost: 10, desc: 'Revive at 5HP (1 use)' },
-    { id: 'c_shield', name: 'Shield', type: 'consumable', displayType: 'Uncommon Consumable', cost: 5, desc: '+5 Temp HP' },
-    { id: 'c_smoke', name: 'Smokescreen', type: 'consumable', displayType: 'Uncommon Consumable', cost: 5, desc: 'Hide 1 monster' }
-];
 
-const magicDb = [
-    { id: 'm_bank', name: 'Bank Gold', type: 'magic', displayType: 'Magic Item', cost: 25, desc: 'Earn interest on gold' },
-    { id: 'm_belt', name: 'Talisman Belt', type: 'magic', displayType: 'Magic Item', cost: 25, desc: '+1 Talisman Capacity' },
-    { id: 'm_evasion', name: 'Evasion Tactics', type: 'magic', displayType: 'Magic Item', cost: 25, desc: 'Skip 2 rooms in a row' },
-    { id: 'm_flask', name: 'Bottomless Flask', type: 'magic', displayType: 'Magic Item', cost: 25, desc: 'Drink 2 potions per room' },
-    { id: 'm_key', name: 'Master Key', type: 'magic', displayType: 'Magic Item', cost: 25, desc: 'Pick 2 items from Chests' },
-    { id: 'm_arcane', name: 'Arcane Supplier', type: 'magic', displayType: 'Magic Item', cost: 25, desc: 'More Rare Consumables' }
-];
 
 function rollMagicItem() {
     currentMagicItem = magicDb[Math.floor(Math.random() * magicDb.length)];
@@ -614,20 +620,7 @@ function useItem() {
             log('No monsters to hide! Item not used.');
         }
     }
-}const shopDb = [
-    { id: 't_silver', name: 'Silver Blades', type: 'talisman', rarity: 'common', cost: 4, desc: 'Weapons 2x Dmg vs Clubs (Vampires)' },
-    { id: 't_quick', name: 'Quick Feet', type: 'talisman', rarity: 'common', cost: 4, desc: 'Dodge 2 damage from every attack' },
-    { id: 't_pick', name: 'Pickpocket', type: 'talisman', rarity: 'common', cost: 4, desc: '+2G on every barehanded kill' },
-    { id: 't_coward', name: 'Cowards Luck', type: 'talisman', rarity: 'common', cost: 4, desc: 'Heal 1 HP if monster is left behind' },
-    { id: 't_blacksmith', name: 'Expert Blacksmith', type: 'talisman', rarity: 'uncommon', cost: 6, desc: 'All Weapons deal +3 damage' },
-    { id: 't_scary', name: 'Scary Aura', type: 'talisman', rarity: 'uncommon', cost: 6, desc: 'Scare 1 monster (<=8) to bottom of deck' },
-    { id: 't_bounty', name: 'Bounty Hunter', type: 'talisman', rarity: 'uncommon', cost: 6, desc: '+2 Gold for kills >= 10' },
-    { id: 't_iron', name: 'Fists of Iron', type: 'talisman', rarity: 'rare', cost: 8, desc: 'Fist dmg -3, Mult x4' },
-    { id: 't_blood', name: 'Blood Vial', type: 'talisman', rarity: 'rare', cost: 8, desc: 'Excess heal to Shield HP' },
-    { id: 't_undying', name: 'Undying', type: 'talisman', rarity: 'rare', cost: 10, desc: 'Revive at 5HP (Destroyed on use)' },
-    { id: 'c_shield', name: 'Shield', type: 'consumable', cost: 5, desc: 'Single-use: +5 Temp HP' },
-    { id: 'c_smoke', name: 'Smokescreen', type: 'consumable', cost: 5, desc: 'Single-use: Hide 1 monster' }
-];
+}
 
 function openShop() {
     document.getElementById('game-screen').style.display = 'none';
