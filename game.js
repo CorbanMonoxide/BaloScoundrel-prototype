@@ -214,14 +214,6 @@ function drawRoom() {
     
     cardsPlayedThisRoom = 0;
     potionUsedThisTurn = false;
-    
-    // If room was just completed, chance for booster pack
-    if (roomCompleted && Math.random() < 0.6) {
-        generateBoosterPack();
-        showBoosterPackUI();
-        return; // Pause here until player selects a card
-    }
-    
     updateUI();
 }
 
@@ -317,7 +309,13 @@ function selectBoosterCard(index) {
     
     document.getElementById('game-screen').style.display = 'block';
     updateUI();
-    drawRoom(); // Continue to next room
+    nextChamber(); // Go to shop after selecting booster card
+}
+
+function showBoosterPackReward() {
+    // Show booster pack after reaching target score, before shop
+    generateBoosterPack();
+    showBoosterPackUI();
 }
 
 function nextChamber() {
@@ -454,7 +452,7 @@ function playCard(index, useWeaponChoice = false) {
         currentRoom.forEach(c => c.played = true);
         
         setTimeout(() => {
-            nextChamber();
+            showBoosterPackReward();
         }, 1500);
     }
 
