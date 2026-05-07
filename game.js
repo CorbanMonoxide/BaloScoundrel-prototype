@@ -502,6 +502,12 @@ function confirmPackSelection() {
     nextChamber();
 }
 
+// Bridge function: show booster pack after score reached, before next chamber
+function showBoosterPackBetweenRooms() {
+    generateBoosterPacks();
+    showPackSelectionUI();
+}
+
 function nextChamber() {
     currentChamber++;
     if (currentChamber > 3) {
