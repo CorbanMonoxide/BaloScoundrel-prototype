@@ -228,104 +228,278 @@ function fleeRoom() {
     drawRoom();
 }
 
-function generateBoosterPack() {
-    // Generate 3 random cards for the booster pack
-    let packCards = [];
-    for (let i = 0; i < 3; i++) {
-        let isWeapon = Math.random() < 0.5;
-        let val = Math.floor(Math.random() * 9) + 2; // Value 2 to 10
-        
-        if (isWeapon) {
-            packCards.push({
-                suit: 'Diamonds',
-                value: val,
-                display: val.toString(),
-                name: 'Weapon ' + val,
-                type: 'weapon'
-            });
-        } else {
-            packCards.push({
-                suit: 'Hearts',
-                value: val,
-                display: val.toString(),
-                name: 'Potion ' + val,
-                type: 'potion'
-            });
+// ============================================================================
+// BOOSTER PACK SYSTEM - Complete Implementation
+// ============================================================================
+
+// Pack type definitions
+const boosterPackTypes = [
+    {
+        id: 'love',
+        name: 'Love Pack',
+        desc: 'Healing & Recovery Focus',
+        weights: { potion: 50, monster: 20, weapon: 20, talisman: 5, item: 5 },
+        rarity: 'common'
+    },
+    {
+        id: 'monster',
+        name: 'Monster Booster',
+        desc: 'Dense Combat Encounters',
+        weights: { monster: 50, potion: 20, weapon: 20, talisman: 5, item: 5 },
+        rarity: 'common'
+    },
+    {
+        id: 'builders',
+        name: 'Builders Box',
+        desc: 'Economy & Utility Items',
+        weights: { item: 50, talisman: 20, monster: 20, weapon: 5, potion: 5 },
+        rarity: 'uncommon'
+    },
+    {
+        id: 'armory',
+        name: 'Armory Pack',
+        desc: 'Weapon Diversity & Scaling',
+        weights: { weapon: 50, talisman: 20, monster: 20, potion: 5, item: 5 },
+        rarity: 'uncommon'
+    },
+    {
+        id: 'shiny',
+        name: 'Shiny Booster',
+        desc: 'Ultra-Rare Game-Changers',
+        weights: { legendary: 50, rare: 20, uncommon: 20, monster: 5, weapon: 5 },
+        rarity: 'rare'
+    }
+];
+
+let pendingBoosterPacks = null;
+let selectedPackContents = null;
+
+// Select a random pack type (weighted by rarity)
+function selectRandomPackType() {
+    let rand = Math.random() * 100;
+    let cumulative = 0;
+    
+    for (let pack of boosterPackTypes) {
+        let weight = pack.rarity === 'common' ? 40 : pack.rarity === 'uncommon' ? 20 : 2;
+        cumulative += weight;
+        if (rand < cumulative) return pack;
+    }
+    return boosterPackTypes[0];
+}
+
+// Generate 2 random packs for player to choose from
+function generateBoosterPacks() {
+    pendingBoosterPacks = [selectRandomPackType(), selectRandomPackType()];
+}
+
+// Show pack selection UI (2 packs side-by-side)
+function showPackSelectionUI() {
+    document.getElementById('game-screen').style.display = 'none';
+    
+    let screen = document.getElementById('booster-pack-screen');
+    if (!screen) {
+        screen = document.createElement('div');
+        screen.id = 'booster-pack-screen';
+        document.body.appendChild(screen);
+    }
+    
+    let html = '<div style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.95);display:flex;align-items:center;justify-content:center;z-index:1000;">';
+    html += '<div style="background:#1e1e2e;border:3px solid #f9e2af;border-radius:10px;padding:40px;max-width:900px;text-align:center;">';
+    html += '<h2 style="margin-top:0;color:#f9e2af;font-family:monospace;font-size:1.5rem;">🎁 CHOOSE A BOOSTER PACK</h2>';
+    html += '<p style="color:#a6adc8;font-family:monospace;margin-bottom:30px;">Pick one to continue...</p>';
+    html += '<div style="display:flex;gap:40px;justify-content:center;margin:30px 0;">';
+    
+    for (let i = 0; i < pendingBoosterPacks.length; i++) {
+        let pack = pendingBoosterPacks[i];
+        html += '<div style="border:2px solid #a6adc8;border-radius:8px;padding:25px;flex:1;cursor:pointer;transition:all 0.2s;font-family:monospace;background:#181825;" ';
+        html += 'onmouseover="this.style.borderColor=\'#cba6f7\';this.style.background=\'#313244\';" ';
+        html += 'onmouseout="this.style.borderColor=\'#a6adc8\';this.style.background=\'#181825\';" ';
+        html += 'onclick="selectPackType(' + i + ')">';
+        html += '<h3 style="margin:0 0 10px 0;color:#f9e2af;">' + pack.name + '</h3>';
+        html += '<p style="margin:0 0 20px 0;color:#a6adc8;font-size:0.9rem;">' + pack.desc + '</p>';
+        html += '<button style="padding:12px 30px;background:#cba6f7;color:#1e1e2e;border:none;border-radius:4px;cursor:pointer;font-weight:bold;font-family:monospace;font-size:1rem;">OPEN</button>';
+        html += '</div>';
+    }
+    
+    html += '</div></div></div>';
+    screen.innerHTML = html;
+    screen.style.display = 'block';
+}
+
+// Generate 5 items based on pack weights
+function generatePackContents(packType) {
+    let contents = [];
+    let weights = packType.weights;
+    
+    for (let i = 0; i < 5; i++) {
+        let item = selectItemByWeight(weights);
+        contents.push(item);
+    }
+    
+    return contents;
+}
+
+// Select an item based on weights
+function selectItemByWeight(weights) {
+    let totalWeight = Object.values(weights).reduce((a, b) => a + b, 0);
+    let rand = Math.random() * totalWeight;
+    let cumulative = 0;
+    
+    for (let [type, weight] of Object.entries(weights)) {
+        cumulative += weight;
+        if (rand < cumulative) {
+            return generateItemOfType(type);
         }
     }
-    pendingBoosterPack = packCards;
+    
+    return generateItemOfType('monster');
 }
 
-function showBoosterPackUI() {
-    document.getElementById('game-screen').style.display = 'none';
-    let boosterDiv = document.getElementById('booster-screen');
-    if (!boosterDiv) {
-        boosterDiv = document.createElement('div');
-        boosterDiv.id = 'booster-screen';
-        document.body.appendChild(boosterDiv);
+// Generate a specific item type
+function generateItemOfType(type) {
+    switch(type) {
+        case 'potion': {
+            let val = Math.floor(Math.random() * 9) + 2;
+            return {
+                suit: 'Hearts',
+                value: val,
+                display: val,
+                name: 'Potion ' + val,
+                type: 'potion',
+                auto: true
+            };
+        }
+        case 'weapon': {
+            let val = Math.floor(Math.random() * 9) + 2;
+            return {
+                suit: 'Diamonds',
+                value: val,
+                display: val,
+                name: 'Weapon ' + val,
+                type: 'weapon',
+                auto: true
+            };
+        }
+        case 'monster': {
+            let val = Math.floor(Math.random() * 13) + 2;
+            let suit = Math.random() < 0.5 ? 'Spades' : 'Clubs';
+            let display = val;
+            if (val === 11) display = 'J';
+            if (val === 12) display = 'Q';
+            if (val === 13) display = 'K';
+            if (val === 14) display = 'A';
+            return {
+                suit: suit,
+                value: val,
+                display: display,
+                name: display + suits[suit].symbol,
+                type: 'monster',
+                auto: true
+            };
+        }
+        case 'talisman': {
+            let talismans = shopDb.filter(t => t.type === 'talisman' && t.rarity === 'common');
+            let tal = talismans[Math.floor(Math.random() * talismans.length)];
+            return { ...tal, auto: false };
+        }
+        case 'item': {
+            let items = shopDb.filter(t => t.type === 'consumable' || t.type === 'magic');
+            let itm = items[Math.floor(Math.random() * items.length)];
+            return { ...itm, auto: false };
+        }
+        case 'rare': {
+            let talismans = shopDb.filter(t => t.type === 'talisman' && t.rarity === 'rare');
+            let tal = talismans[Math.floor(Math.random() * talismans.length)];
+            return { ...tal, auto: false };
+        }
+        case 'uncommon': {
+            let talismans = shopDb.filter(t => t.type === 'talisman' && t.rarity === 'uncommon');
+            let tal = talismans[Math.floor(Math.random() * talismans.length)];
+            return { ...tal, auto: false };
+        }
+        case 'legendary': {
+            let talismans = shopDb.filter(t => t.type === 'talisman' && t.rarity === 'rare');
+            let tal = talismans[Math.floor(Math.random() * talismans.length)];
+            return { ...tal, auto: false };
+        }
+        default:
+            return generateItemOfType('monster');
+    }
+}
+
+// Open the selected pack and show its contents
+function selectPackType(index) {
+    if (!pendingBoosterPacks || index < 0 || index >= pendingBoosterPacks.length) return;
+    
+    let selectedPack = pendingBoosterPacks[index];
+    selectedPackContents = generatePackContents(selectedPack);
+    
+    document.getElementById('booster-pack-screen').style.display = 'none';
+    showPackContentsUI(selectedPack, selectedPackContents);
+}
+
+// Show the pack contents with auto/optional indicators
+function showPackContentsUI(packType, contents) {
+    let screen = document.getElementById('booster-contents-screen');
+    if (!screen) {
+        screen = document.createElement('div');
+        screen.id = 'booster-contents-screen';
+        document.body.appendChild(screen);
     }
     
-    boosterDiv.style = 'background: #181825; border: 3px solid #f9e2af; border-radius: 8px; padding: 30px; margin: 20px auto; max-width: 800px; text-align: center;';
-    boosterDiv.innerHTML = `
-        <h2 style="margin-top: 0; color: #f9e2af;">⭐ BOOSTER PACK DROPPED! ⭐</h2>
-        <p style="color: #a6adc8; font-size: 1.1rem; margin-bottom: 30px;">Choose 1 card to add to your deck:</p>
-        <div id="booster-cards" style="display: flex; justify-content: center; gap: 20px; flex-wrap: wrap; margin-bottom: 30px;"></div>
-    `;
+    let html = '<div style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.95);display:flex;align-items:center;justify-content:center;z-index:1001;">';
+    html += '<div style="background:#1e1e2e;border:3px solid #cba6f7;border-radius:10px;padding:40px;max-width:700px;font-family:monospace;max-height:80vh;overflow-y:auto;">';
+    html += '<h2 style="margin-top:0;text-align:center;color:#f9e2af;">✨ ' + packType.name.toUpperCase() + ' ✨</h2>';
+    html += '<div style="background:#313244;border-radius:6px;padding:20px;margin:30px 0;">';
     
-    const cardsDiv = document.getElementById('booster-cards');
-    pendingBoosterPack.forEach((card, index) => {
-        const cardEl = document.createElement('div');
-        let symbol = card.type === 'weapon' ? '♦' : '♥';
-        let cssClass = card.type === 'weapon' ? 'weapon' : 'potion';
-        let suitColor = card.type === 'weapon' ? '#e53935' : '#e53935';
+    for (let i = 0; i < contents.length; i++) {
+        let item = contents[i];
+        let symbol = item.suit ? suits[item.suit].symbol : '🎁';
+        let color = (item.suit === 'Hearts' || item.suit === 'Diamonds') ? '#e53935' : '#a6adc8';
+        let display = item.display || item.name;
+        let status = item.auto ? '✓ Added' : '☐ Optional';
+        let statusColor = item.auto ? '#a6e3a1' : '#cba6f7';
         
-        cardEl.style = 'border: 2px solid #cba6f7; padding: 20px; border-radius: 8px; cursor: pointer; background: #313244; transition: 0.2s; flex: 0 0 auto;';
-        cardEl.innerHTML = `
-            <div class="card ${cssClass}" style="margin: 10px auto; width: 100px; height: 140px; display: flex; align-items: center; justify-content: center; pointer-events: none;">
-                <div style="margin-top: 15px;"><span style="color:${suitColor};">${symbol}</span> <span style="color:#000000;">${card.display}</span></div>
-            </div>
-            <p style="color: #a6adc8; margin-top: 10px; margin-bottom: 0;">${card.name}</p>
-        `;
-        
-        cardEl.onmouseover = () => cardEl.style.borderColor = '#a6e3a1';
-        cardEl.onmouseout = () => cardEl.style.borderColor = '#cba6f7';
-        
-        cardEl.onclick = () => selectBoosterCard(index);
-        cardsDiv.appendChild(cardEl);
-    });
+        html += '<div style="margin-bottom:15px;padding:12px;background:#181825;border-radius:4px;display:flex;justify-content:space-between;align-items:center;border-left:3px solid ' + (item.auto ? '#a6e3a1' : '#cba6f7') + ';">';
+        html += '<span style="color:' + color + ';"><strong>' + symbol + ' ' + display + '</strong></span>';
+        html += '<span style="color:' + statusColor + ';font-size:0.9rem;">' + status + '</span>';
+        html += '</div>';
+    }
+    
+    html += '</div>';
+    html += '<div style="text-align:center;">';
+    html += '<button onclick="confirmPackSelection()" style="padding:15px 40px;background:#a6e3a1;color:#1e1e2e;border:none;border-radius:4px;cursor:pointer;font-weight:bold;font-family:monospace;font-size:1rem;">CONTINUE TO SHOP</button>';
+    html += '</div>';
+    html += '</div></div>';
+    
+    screen.innerHTML = html;
+    screen.style.display = 'block';
 }
 
-function selectBoosterCard(index) {
-    if (!pendingBoosterPack || index < 0 || index >= pendingBoosterPack.length) return;
+// Confirm selection and add cards to deck
+function confirmPackSelection() {
+    if (!selectedPackContents) return;
     
-    let selectedCard = pendingBoosterPack[index];
-    extraCards.push(selectedCard);
+    // Add all deck cards (auto=true) to extraCards
+    selectedPackContents.forEach(item => {
+        if (item.auto) {
+            extraCards.push({ ...item });
+            log('⭐ Added ' + item.name + ' from Booster Pack!');
+        }
+    });
     
-    log("⭐ Added " + selectedCard.name + " from Booster Pack!");
-    
-    pendingBoosterPack = null;
-    let boosterDiv = document.getElementById('booster-screen');
-    if (boosterDiv) boosterDiv.style.display = 'none';
+    // Hide booster screens
+    let boosterScreen = document.getElementById('booster-pack-screen');
+    let contentsScreen = document.getElementById('booster-contents-screen');
+    if (boosterScreen) boosterScreen.style.display = 'none';
+    if (contentsScreen) contentsScreen.style.display = 'none';
     
     document.getElementById('game-screen').style.display = 'block';
-    updateUI();
+    pendingBoosterPacks = null;
+    selectedPackContents = null;
     
-    // Check if this booster pack came between rooms (after score reached)
-    if (window.boosterCardThenNextChamber) {
-        window.boosterCardThenNextChamber = false;
-        nextChamber();
-    } else {
-        drawRoom();
-    }
-}
-
-function showBoosterPackBetweenRooms() {
-    // Show booster pack after reaching score, before next chamber
-    generateBoosterPack();
-    showBoosterPackUI();
-    
-    // Override the selectBoosterCard to continue to next chamber
-    window.boosterCardThenNextChamber = true;
+    // Proceed to shop
+    nextChamber();
 }
 
 function nextChamber() {
