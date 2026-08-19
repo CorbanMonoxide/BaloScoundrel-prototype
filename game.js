@@ -246,7 +246,6 @@ function drawRoom() {
         }
     }
     
-    roomMult = (currentWeaponValue !== null) ? currentWeaponValue : 1;
     cardsPlayedThisRoom = 0;
     potionUsedThisTurn = false;
     updateUI();
@@ -593,8 +592,7 @@ function playCard(index, useWeaponChoice = false) {
         currentWeaponValue = card.value;
         currentWeaponLimit = 15; 
         currentWeaponMult = card.value;
-        roomMult = card.value;
-        log('Equipped Weapon ' + card.display + '. Mult: ' + card.value + 'x.');
+        log('Equipped Weapon ' + card.display + '.');
     } 
     else if (type === 'monster') {
         let killMult = 1;
@@ -655,10 +653,8 @@ function playCard(index, useWeaponChoice = false) {
         
         gold += earnedGold;
         roomBase += card.value;
-        if (isBarehanded && currentWeaponValue === null) {
-            roomMult = killMult;
-        }
-        log('Defeated ' + card.display + '! +' + card.value + ' base. (+' + earnedGold + ' Gold)');
+        roomMult += killMult;
+        log('Defeated ' + card.display + '! +' + card.value + ' base, +' + killMult + ' mult. (+' + earnedGold + ' Gold)');
     }
 
     card.played = true;
