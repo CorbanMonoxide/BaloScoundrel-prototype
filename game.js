@@ -14,6 +14,10 @@ let currentWeaponValue = null;
 let currentWeaponLimit = null; 
 let currentWeaponMult = 1;     
 
+// Room-scoped scoring accumulators (Room = Hand)
+let roomBase = 0;
+let roomMult = 0;
+
 let cardsPlayedThisRoom = 0;
 let fledLastRoom = false;
 let potionUsedThisTurn = false;
@@ -69,6 +73,7 @@ function updateUI() {
     document.getElementById('score').innerText = score;
     document.getElementById('gold').innerText = gold;
     document.getElementById('mult').innerText = currentWeaponValue ? currentWeaponMult + 'x' : '1x';
+    document.getElementById('room-score').innerText = roomBase + ' × ' + roomMult;
     document.getElementById('weapon').innerText = currentWeaponValue ? '♦ ' + currentWeaponValue + ' (Max: ' + currentWeaponLimit + ')' : 'None';
     document.getElementById('deck-count').innerText = deck.length;
     document.getElementById('talismans-ui').innerText = talismans.length + '/4';
@@ -157,13 +162,17 @@ function initGame() {
 }
 
 function startChamber() {
-    targetScore = 3000 + ((currentChamber - 1) * 2500) + ((currentDungeon - 1) * 10000);
+    // Room-scoped scoring (base × mult) dwarfs the old per-kill numbers.
+    // Rough ~10x rebalance as a stopgap — needs real playtesting.
+    targetScore = 30000 + ((currentChamber - 1) * 25000) + ((currentDungeon - 1) * 100000);
     buildDeck();
     score = 0; 
     hp = 20; 
     currentWeaponValue = null;
     currentWeaponLimit = null;
     currentWeaponMult = 1;
+    roomBase = 0;
+    roomMult = 0;
     fledLastRoom = false;
     currentRoom = [];
     gameOver = false;
@@ -616,9 +625,9 @@ function playCard(index, useWeaponChoice = false) {
         if (card.value >= 10 && typeof hasTalisman === 'function' && hasTalisman('t_bounty')) { earnedGold += 2; log('Bounty Hunter: +2G'); }
         
         gold += earnedGold;
-        const points = (card.value * 10) * killMult;
-        score += points;
-        log('Defeated ' + card.display + '! Scored ' + (card.value*10) + ' x ' + killMult + ' = ' + points + ' pts. (+' + earnedGold + ' Gold)');
+        roomBase += card.value * 10;
+        roomMult += killMult;
+        log('Defeated ' + card.display + '! +' + (card.value*10) + ' base, +' + killMult + ' mult. (+' + earnedGold + ' Gold)');
     }
 
     card.played = true;
@@ -636,14 +645,9 @@ function playCard(index, useWeaponChoice = false) {
         hp = 0;
         gameOver = true;
         currentRoom.forEach(c => c.played = true);
-    } else if (score >= targetScore) {
-        log('🎉 TARGET SCORE REACHED! (' + score + '/' + targetScore + ') 🎉');
-        gameOver = true;
-        currentRoom.forEach(c => c.played = true);
-        
-        setTimeout(() => {
-            showBoosterPackBetweenRooms();
-        }, 1500);
+    } else if (cardsPlayedThisRoom >= 3) {
+        // Room = hand: resolve the room score once 3 cards are cleared.
+        resolveRoom();
     }
 
     updateUI();
@@ -653,6 +657,34 @@ function playCard(index, useWeaponChoice = false) {
 
 
 
+
+// ============================================================================
+// ROOM-SCOPED SCORING (Room = Hand)
+// ============================================================================
+
+function resolveRoom() {
+    if (roomBase === 0) {
+        // No monsters cleared this room (potions/weapons only) — no score.
+        log('Room resolved: no monsters, no score.');
+        roomBase = 0;
+        roomMult = 0;
+        return;
+    }
+    const roomScore = roomBase * roomMult;
+    score += roomScore;
+    log('🏠 Room resolved: ' + roomBase + ' base × ' + roomMult + ' mult = ' + roomScore + ' pts (Total: ' + score + ')');
+    roomBase = 0;
+    roomMult = 0;
+
+    if (score >= targetScore) {
+        log('🎉 TARGET SCORE REACHED! (' + score + '/' + targetScore + ') 🎉');
+        gameOver = true;
+        currentRoom.forEach(c => c.played = true);
+        setTimeout(() => {
+            showBoosterPackBetweenRooms();
+        }, 1500);
+    }
+}
 
 function rollMagicItem() {
     currentMagicItem = magicDb[Math.floor(Math.random() * magicDb.length)];
