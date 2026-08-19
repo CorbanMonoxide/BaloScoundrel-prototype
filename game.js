@@ -72,7 +72,6 @@ function updateUI() {
     document.getElementById('hp').innerText = hp + ' / 20' + (typeof shieldHp !== 'undefined' && shieldHp > 0 ? ' [+' + shieldHp + ']' : '');
     document.getElementById('score').innerText = score;
     document.getElementById('gold').innerText = gold;
-    document.getElementById('mult').innerText = currentWeaponValue ? currentWeaponMult + 'x' : '1x';
     document.getElementById('room-base').innerText = roomBase;
     document.getElementById('room-mult').innerText = roomMult;
     document.getElementById('weapon').innerText = currentWeaponValue ? '♦ ' + currentWeaponValue + ' (Max: ' + currentWeaponLimit + ')' : 'None';
@@ -185,6 +184,7 @@ function startChamber() {
 
 function drawRoom() {
     if (gameOver) return;
+    document.getElementById('room-result').style.display = 'none';
 
     if (deck.length === 0 && currentRoom.filter(c => !c.played).length === 0) {
         gameOver = true;
@@ -671,11 +671,16 @@ function resolveRoom() {
         roomMult = 0;
         return;
     }
-    const roomScore = roomBase * roomMult;
+    const prevScore = score;
+    const base = roomBase;
+    const mult = roomMult;
+    const roomScore = base * mult;
     score += roomScore;
-    log('🏠 Room resolved: ' + roomBase + ' base × ' + roomMult + ' mult = ' + roomScore + ' pts (Total: ' + score + ')');
     roomBase = 0;
     roomMult = 0;
+
+    showRoomResult(base, mult, roomScore, prevScore, score);
+    log('🏠 Room resolved: ' + base + ' base × ' + mult + ' mult = ' + roomScore + ' pts (Total: ' + score + ')');
 
     if (score >= targetScore) {
         log('🎉 TARGET SCORE REACHED! (' + score + '/' + targetScore + ') 🎉');
@@ -685,6 +690,31 @@ function resolveRoom() {
             showBoosterPackBetweenRooms();
         }, 1500);
     }
+}
+
+function showRoomResult(base, mult, roomScore, prevScore, total) {
+    const banner = document.getElementById('room-result');
+    banner.innerHTML =
+        '<div class="room-formula">Room Cleared: ' + base + ' Base × ' + mult + ' Mult</div>' +
+        '<div class="room-total">+' + roomScore + ' pts</div>';
+    banner.style.display = 'block';
+    // Retrigger the pulse animation on every room.
+    banner.style.animation = 'none';
+    void banner.offsetWidth;
+    banner.style.animation = 'roomPulse 0.4s ease-out';
+
+    // Count the score up to the new total.
+    const scoreEl = document.getElementById('score');
+    const duration = 600;
+    const startTime = performance.now();
+    function step(now) {
+        const t = Math.min((now - startTime) / duration, 1);
+        const eased = 1 - Math.pow(1 - t, 3);
+        scoreEl.innerText = Math.round(prevScore + (total - prevScore) * eased);
+        if (t < 1) requestAnimationFrame(step);
+        else scoreEl.innerText = total;
+    }
+    requestAnimationFrame(step);
 }
 
 function rollMagicItem() {

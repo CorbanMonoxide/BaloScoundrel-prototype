@@ -32,6 +32,11 @@
     .tooltip { position: relative; cursor: help; }
     .tooltip .tooltiptext { visibility: hidden; width: 220px; background-color: #181825; color: #cdd6f4; text-align: left; border-radius: 6px; padding: 10px; position: absolute; z-index: 10; bottom: 125%; left: 50%; transform: translateX(-50%); opacity: 0; transition: opacity 0.3s; border: 1px solid #cba6f7; font-size: 0.8rem; font-weight: normal; line-height: 1.4; }
     .tooltip:hover .tooltiptext { visibility: visible; opacity: 1; }
+
+    #room-result { display: none; margin: 16px auto 0; padding: 12px 24px; background: #313244; border: 2px solid #f9e2af; border-radius: 8px; font-size: 1.1rem; }
+    #room-result .room-formula { color: #a6adc8; }
+    #room-result .room-total { color: #f9e2af; font-weight: bold; font-size: 1.5rem; margin-top: 4px; }
+    @keyframes roomPulse { 0% { transform: scale(0.6); opacity: 0; } 55% { transform: scale(1.08); opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
 </style>
 </head>
 <body onload="initGame()">
@@ -42,7 +47,6 @@
     <div id="top-stats" class="stats-bar">
         <div class="stat"><span class="label">Target Score</span><span id="target">5000</span></div>
         <div class="stat"><span class="label">Score</span><span id="score">0</span></div>
-        <div class="stat"><span class="label">Multiplier</span><span id="mult">1x</span></div>
         <div class="stat"><span class="label">Base</span><span id="room-base">0</span></div>
         <div class="stat"><span class="label">Mult</span><span id="room-mult">0</span></div>
         <div class="stat"><span class="label">Gold</span><span id="gold">0</span></div>
@@ -51,6 +55,7 @@
 
     <h2>Current Room</h2>
     <div id="room"></div>
+    <div id="room-result"></div>
 
     <div id="controls">
         <button id="btn-flee" onclick="fleeRoom()">Flee Room</button>
