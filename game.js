@@ -162,9 +162,9 @@ function initGame() {
 }
 
 function startChamber() {
-    // Room-scoped scoring (base × mult) dwarfs the old per-kill numbers.
-    // Rough ~10x rebalance as a stopgap — needs real playtesting.
-    targetScore = 15000 + ((currentChamber - 1) * 25000) + ((currentDungeon - 1) * 100000);
+    // Room-scoped scoring: base = monster face value, mult = weapon value per kill.
+    // Targets rebalanced ~10x down from the old face-value×10 base — rough stopgap, needs playtesting.
+    targetScore = 1500 + ((currentChamber - 1) * 2500) + ((currentDungeon - 1) * 10000);
     buildDeck();
     score = 0; 
     hp = 20; 
@@ -626,9 +626,9 @@ function playCard(index, useWeaponChoice = false) {
         if (card.value >= 10 && typeof hasTalisman === 'function' && hasTalisman('t_bounty')) { earnedGold += 2; log('Bounty Hunter: +2G'); }
         
         gold += earnedGold;
-        roomBase += card.value * 10;
+        roomBase += card.value;
         roomMult += killMult;
-        log('Defeated ' + card.display + '! +' + (card.value*10) + ' base, +' + killMult + ' mult. (+' + earnedGold + ' Gold)');
+        log('Defeated ' + card.display + '! +' + card.value + ' base, +' + killMult + ' mult. (+' + earnedGold + ' Gold)');
     }
 
     card.played = true;
