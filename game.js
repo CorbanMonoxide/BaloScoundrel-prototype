@@ -162,9 +162,13 @@ function initGame() {
 }
 
 function startChamber() {
-    // Room-scoped scoring: base = monster face value, mult = weapon value per kill.
-    // Targets rebalanced ~10x down from the old face-value×10 base — rough stopgap, needs playtesting.
-    targetScore = 1500 + ((currentChamber - 1) * 2500) + ((currentDungeon - 1) * 10000);
+    // Exponential target scaling (Balatro-style): geometric across dungeons,
+    // fixed multipliers within a dungeon (chambers 1/2/3).
+    // G = 3 is a placeholder growth rate — needs playtesting once talismans land.
+    const chamberMult = [1, 1.6, 2.5];
+    const G = 3;
+    const dungeonBase = 1000 * Math.pow(G, currentDungeon - 1);
+    targetScore = Math.round(dungeonBase * chamberMult[currentChamber - 1]);
     buildDeck();
     score = 0; 
     hp = 20; 
