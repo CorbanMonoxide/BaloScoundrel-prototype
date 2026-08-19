@@ -58,8 +58,27 @@ const shopDb = [
     { id: 't_blood', name: 'Blood Vial', type: 'talisman', rarity: 'rare', cost: 8, desc: 'Excess heal to Shield HP' },
     { id: 't_undying', name: 'Undying', type: 'talisman', rarity: 'rare', cost: 10, desc: 'Revive at 5HP (Destroyed on use)' },
     { id: 'c_shield', name: 'Shield', type: 'consumable', cost: 5, desc: 'Single-use: +5 Temp HP' },
-    { id: 'c_smoke', name: 'Smokescreen', type: 'consumable', cost: 5, desc: 'Single-use: Hide 1 monster' }
+    { id: 'c_smoke', name: 'Smokescreen', type: 'consumable', cost: 5, desc: 'Single-use: Hide 1 monster' },
+    { id: 'c_heal', name: 'Healing Salve', type: 'consumable', cost: 8, desc: 'Restore 10 HP immediately' },
+    { id: 'c_armor', name: 'Armor Plate', type: 'consumable', cost: 6, desc: '+5 Shield immediately' }
 ];
+
+function pickWeightedShopItem() {
+    // Weighted shop draft: instant health (high rate), instant armor (lower rate).
+    const entries = shopDb.map(db => {
+        let w = 4;
+        if (db.id === 'c_heal') w = 45;
+        if (db.id === 'c_armor') w = 15;
+        return { item: db, weight: w };
+    });
+    const total = entries.reduce((s, e) => s + e.weight, 0);
+    let r = Math.random() * total;
+    for (const e of entries) {
+        r -= e.weight;
+        if (r <= 0) return { ...e.item };
+    }
+    return { ...entries[entries.length - 1].item };
+}
 
 function log(msg) {
     const logDiv = document.getElementById('log');
@@ -77,6 +96,8 @@ function updateUI() {
     document.getElementById('weapon').innerText = currentWeaponValue ? '♦ ' + currentWeaponValue + ' (Max: ' + currentWeaponLimit + ')' : 'None';
     document.getElementById('deck-count').innerText = deck.length;
     document.getElementById('talismans-ui').innerText = talismans.length + '/4';
+    const tl = document.getElementById('talisman-list');
+    if (tl) tl.innerHTML = talismans.length === 0 ? '' : '💠 ' + talismans.map(t => t.name).join(' · ');
     
     document.getElementById('target').innerText = targetScore + ' (D' + currentDungeon + 'C' + currentChamber + ')';
     document.getElementById('btn-use-item').style.display = currentItem ? 'block' : 'none';
@@ -171,7 +192,6 @@ function startChamber() {
     targetScore = Math.round(dungeonBase * chamberMult[currentChamber - 1]);
     buildDeck();
     score = 0; 
-    hp = 20; 
     currentWeaponValue = null;
     currentWeaponLimit = null;
     currentWeaponMult = 1;
@@ -527,8 +547,10 @@ function nextChamber() {
     if (currentChamber > 3) {
         currentChamber = 1;
         currentDungeon++;
+        hp = 20;
+        shieldHp = 0;
         rollMagicItem();
-        log('🎉 DUNGEON CLEARED! Moving to Dungeon ' + currentDungeon);
+        log('🎉 DUNGEON CLEARED! Full heal. Moving to Dungeon ' + currentDungeon);
     }
     openShop();
 }
@@ -1010,8 +1032,7 @@ function openShop() {
                 });
             }
         } else {
-            let dbItem = shopDb[Math.floor(Math.random() * shopDb.length)];
-            items.push({...dbItem}); // Deep copy
+            items.push(pickWeightedShopItem());
         }
     }
     
@@ -1053,9 +1074,24 @@ function buyItem(item, index, el) {
                 log("Shop: Talisman slots full! (4/4)");
                 return;
             }
+            if (talismans.some(t => t.id === item.id)) {
+                log("Shop: You already have " + item.name + "!");
+                return;
+            }
             talismans.push(item);
         } else if (item.type === 'weapon' || item.type === 'potion') {
             extraCards.push({ suit: item.cardData.suit, value: item.cardData.value, display: item.cardData.display });
+        } else if (item.type === 'consumable') {
+            if (item.id === 'c_heal') {
+                hp = Math.min(20, hp + 10);
+                log("Shop: Healing Salve restored 10 HP.");
+            } else if (item.id === 'c_armor') {
+                shieldHp += 5;
+                log("Shop: Armor Plate added 5 Shield.");
+            } else {
+                currentItem = item;
+                log("Shop: " + item.name + " ready to use.");
+            }
         }
         
         gold -= item.cost;
