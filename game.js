@@ -73,7 +73,8 @@ function updateUI() {
     document.getElementById('score').innerText = score;
     document.getElementById('gold').innerText = gold;
     document.getElementById('mult').innerText = currentWeaponValue ? currentWeaponMult + 'x' : '1x';
-    document.getElementById('room-score').innerText = roomBase + ' × ' + roomMult;
+    document.getElementById('room-base').innerText = roomBase;
+    document.getElementById('room-mult').innerText = roomMult;
     document.getElementById('weapon').innerText = currentWeaponValue ? '♦ ' + currentWeaponValue + ' (Max: ' + currentWeaponLimit + ')' : 'None';
     document.getElementById('deck-count').innerText = deck.length;
     document.getElementById('talismans-ui').innerText = talismans.length + '/4';
