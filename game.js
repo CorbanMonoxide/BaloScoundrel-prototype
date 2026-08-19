@@ -1111,3 +1111,24 @@ function closeShop() {
     document.getElementById('game-screen').style.display = 'block';
     startChamber();
 }
+
+// ============================================================================
+// DEV / TESTING TOOLS
+// ============================================================================
+
+function devSkipChamber() {
+    if (gameOver) {
+        log("Dev: Game over — restart first.");
+        return;
+    }
+    log("Dev: Skipping to the next chamber's shop.");
+    nextChamber();
+}
+
+function devGiveGold() {
+    gold += 100;
+    updateUI();
+    const sg = document.getElementById('shop-gold');
+    if (sg) sg.innerText = gold;
+    log("Dev: +100 Gold.");
+}
