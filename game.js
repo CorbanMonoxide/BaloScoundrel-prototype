@@ -165,7 +165,7 @@ function initGame() {
 function startChamber() {
     // Room-scoped scoring (base × mult) dwarfs the old per-kill numbers.
     // Rough ~10x rebalance as a stopgap — needs real playtesting.
-    targetScore = 30000 + ((currentChamber - 1) * 25000) + ((currentDungeon - 1) * 100000);
+    targetScore = 15000 + ((currentChamber - 1) * 25000) + ((currentDungeon - 1) * 100000);
     buildDeck();
     score = 0; 
     hp = 20; 
