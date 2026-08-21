@@ -29,6 +29,7 @@ let currentChestCost = 5;
 let talismans = [];
 let extraCards = [];
 let pendingBoosterPack = null;
+let shopRerollCount = 0;
 
 // Talisman effect state
 let fleeCount = 0;
@@ -1156,10 +1157,19 @@ function useItem() {
 }
 
 function openShop() {
+    shopRerollCount = 0;
     document.getElementById('game-screen').style.display = 'none';
     document.getElementById('shop-screen').style.display = 'block';
     document.getElementById('shop-gold').innerText = gold;
-    
+    renderShopItems();
+}
+
+function getRerollCost() {
+    // Each reroll within a shop visit costs more: 5G, 10G, 15G, ...
+    return 5 + shopRerollCount * 5;
+}
+
+function renderShopItems() {
     const shopDiv = document.getElementById('shop-items');
     shopDiv.innerHTML = '';
     
@@ -1225,6 +1235,31 @@ function openShop() {
         el.onclick = () => buyItem(item, index, el);
         shopDiv.appendChild(el);
     });
+    
+    updateRerollButton();
+}
+
+function rerollShop() {
+    const cost = getRerollCost();
+    if (gold < cost) {
+        log("Shop: Not enough gold to reroll (" + cost + "G)!");
+        return;
+    }
+    gold -= cost;
+    shopRerollCount++;
+    log("Shop: Rerolled for " + cost + "G.");
+    document.getElementById('shop-gold').innerText = gold;
+    document.getElementById('gold').innerText = gold;
+    renderShopItems();
+    updateUI();
+}
+
+function updateRerollButton() {
+    const btn = document.getElementById('btn-reroll');
+    if (!btn) return;
+    const cost = getRerollCost();
+    btn.innerHTML = 'Reroll Shop (' + cost + 'G)';
+    btn.disabled = gold < cost;
 }
 
 function buyItem(item, index, el) {
@@ -1260,6 +1295,7 @@ function buyItem(item, index, el) {
         el.style.display = 'none'; // remove from shop visually
         log("Shop: Bought " + item.name + " for " + item.cost + "G.");
         updateUI(); // refresh UI stats
+        updateRerollButton();
     } else {
         log("Shop: Not enough gold for " + item.name + "!");
     }
