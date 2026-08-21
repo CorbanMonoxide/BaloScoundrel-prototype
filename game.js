@@ -30,12 +30,45 @@ let talismans = [];
 let extraCards = [];
 let pendingBoosterPack = null;
 
+// Talisman effect state
+let fleeCount = 0;
+let temperedSteelUsed = false;
+let smokeBombUsedThisChamber = false;
+let evasionUsedThisChamber = false;
+
 const suits = {
     'Spades': { symbol: '♠', type: 'monster' },
     'Clubs': { symbol: '♣', type: 'monster' },
     'Diamonds': { symbol: '♦', type: 'weapon' },
     'Hearts': { symbol: '♥', type: 'potion' }
 };
+
+function weaponType(value) {
+    // Diamond weapons 2-10 (see Scoundrel Weapons.md)
+    if ([6, 9, 10].includes(value)) return 'Sharp';
+    if ([2, 4, 5, 8].includes(value)) return 'Blunt';
+    if ([3, 7].includes(value)) return 'Piercing';
+    return null;
+}
+
+function monsterType(value) {
+    // Black-suit monsters 2-14 (see Scoundrel Monsters.md)
+    if (value <= 3) return 'Zombie';
+    if (value <= 5) return 'Skeleton';
+    if (value <= 7) return 'Ghost';
+    if (value <= 9) return 'Elemental';
+    if (value <= 11) return 'Demon';
+    if (value <= 13) return 'Dragon';
+    return 'Lich';
+}
+
+function displayForValue(value) {
+    if (value === 11) return 'J';
+    if (value === 12) return 'Q';
+    if (value === 13) return 'K';
+    if (value === 14) return 'A';
+    return value.toString();
+}
 
 const magicDb = [
     { id: 'm_bank', name: 'Bank Gold', type: 'magic', displayType: 'Magic Item', cost: 25, desc: 'Earn interest on gold' },
@@ -47,16 +80,41 @@ const magicDb = [
 ];
 
 const shopDb = [
-    { id: 't_silver', name: 'Silver Blades', type: 'talisman', rarity: 'common', cost: 4, desc: 'Weapons 2x Dmg vs Clubs (Vampires)' },
-    { id: 't_quick', name: 'Quick Feet', type: 'talisman', rarity: 'common', cost: 4, desc: 'Dodge 2 damage from every attack' },
+    // === COMMON TALISMANS ===
+    { id: 't_tempered', name: 'Tempered Steel', type: 'talisman', rarity: 'common', cost: 4, desc: 'First weapon kill does not degrade it' },
+    { id: 't_quick', name: 'Quick Feet', type: 'talisman', rarity: 'common', cost: 4, desc: 'Incoming damage reduced by 2' },
     { id: 't_pick', name: 'Pickpocket', type: 'talisman', rarity: 'common', cost: 4, desc: '+2G on every barehanded kill' },
-    { id: 't_coward', name: 'Cowards Luck', type: 'talisman', rarity: 'common', cost: 4, desc: 'Heal 1 HP if monster is left behind' },
-    { id: 't_blacksmith', name: 'Expert Blacksmith', type: 'talisman', rarity: 'uncommon', cost: 6, desc: 'All Weapons deal +3 damage' },
-    { id: 't_scary', name: 'Scary Aura', type: 'talisman', rarity: 'uncommon', cost: 6, desc: 'Scare 1 monster (<=8) to bottom of deck' },
-    { id: 't_bounty', name: 'Bounty Hunter', type: 'talisman', rarity: 'uncommon', cost: 6, desc: '+2 Gold for kills >= 10' },
-    { id: 't_iron', name: 'Fists of Iron', type: 'talisman', rarity: 'rare', cost: 8, desc: 'Fist dmg -3, Mult x4' },
-    { id: 't_blood', name: 'Blood Vial', type: 'talisman', rarity: 'rare', cost: 8, desc: 'Excess heal to Shield HP' },
-    { id: 't_undying', name: 'Undying', type: 'talisman', rarity: 'rare', cost: 10, desc: 'Revive at 5HP (Destroyed on use)' },
+    { id: 't_sharp', name: 'Sharp Blades', type: 'talisman', rarity: 'common', cost: 4, desc: 'Sharp weapons +5 mult when equipped' },
+    { id: 't_heavy', name: 'Heavy Hitter', type: 'talisman', rarity: 'common', cost: 4, desc: 'Blunt weapons +5 mult when equipped' },
+    { id: 't_pierce', name: 'Piercing Blows', type: 'talisman', rarity: 'common', cost: 4, desc: 'Piercing weapons +5 mult when equipped' },
+    { id: 't_grave', name: 'Grave Digger', type: 'talisman', rarity: 'common', cost: 4, desc: '+10 base essence vs Zombies' },
+    { id: 't_ghost', name: 'Ghost Buster', type: 'talisman', rarity: 'common', cost: 4, desc: '+10 base essence vs Ghosts & Elementals' },
+    { id: 't_abom', name: 'Abomination Hater', type: 'talisman', rarity: 'common', cost: 4, desc: '+10 base essence vs Demons & Dragons' },
+    { id: 't_chump', name: 'Chump Change', type: 'talisman', rarity: 'common', cost: 4, desc: '+1G for kills of strength 6 or lower' },
+    { id: 't_desperate', name: 'Desperate Blows', type: 'talisman', rarity: 'common', cost: 4, desc: 'Weapons under 50% durability deal +2 dmg' },
+    { id: 't_copper', name: 'Copper Talisman', type: 'talisman', rarity: 'common', cost: 4, desc: '+2x base score multiplier' },
+    { id: 't_bloodmoney', name: 'Blood Money', type: 'talisman', rarity: 'common', cost: 4, desc: '+1G for each damage taken' },
+    { id: 't_overkill', name: 'Overkill', type: 'talisman', rarity: 'common', cost: 4, desc: '+1G for each damage over monster strength' },
+    { id: 't_strpot', name: 'Strength Potions', type: 'talisman', rarity: 'common', cost: 4, desc: 'Potions add their value to mult' },
+    { id: 't_essential', name: 'Essential Talisman', type: 'talisman', rarity: 'common', cost: 4, desc: '+3 mult for each held talisman' },
+    // === UNCOMMON TALISMANS ===
+    { id: 't_blacksmith', name: 'Expert Blacksmith', type: 'talisman', rarity: 'uncommon', cost: 6, desc: 'All weapons deal +3 damage' },
+    { id: 't_scary', name: 'Scary Aura', type: 'talisman', rarity: 'uncommon', cost: 6, desc: 'Scare 1 monster (4 or less) to bottom of deck' },
+    { id: 't_bounty', name: 'Bounty Hunter', type: 'talisman', rarity: 'uncommon', cost: 6, desc: '+5G for kills of strength 10 or higher' },
+    { id: 't_steel', name: 'Steel Talisman', type: 'talisman', rarity: 'uncommon', cost: 6, desc: '+2x base score multiplier' },
+    { id: 't_smoke', name: 'Smoke Bomb', type: 'talisman', rarity: 'uncommon', cost: 6, desc: 'Skip a room mid-clear, once per chamber' },
+    { id: 't_iron', name: 'Fists of Iron', type: 'talisman', rarity: 'uncommon', cost: 6, desc: 'Fist dmg -3, barehanded mult 10x' },
+    { id: 't_intimidate', name: 'Intimidation', type: 'talisman', rarity: 'uncommon', cost: 6, desc: 'Left-behind monster loses 2 strength next room' },
+    { id: 't_cowardcharm', name: "Coward's Charm", type: 'talisman', rarity: 'uncommon', cost: 6, desc: 'Fleeing grants 500 essence per flee this run' },
+    { id: 't_sharp_senses', name: 'Sharp Senses', type: 'talisman', rarity: 'uncommon', cost: 6, desc: 'Sharp weapons +10 mult; dmg taken -2' },
+    { id: 't_heavy_thoughts', name: 'Heavy Thoughts', type: 'talisman', rarity: 'uncommon', cost: 6, desc: 'Blunt weapons +10 mult; dmg taken -2' },
+    { id: 't_pierce_screams', name: 'Piercing Screams', type: 'talisman', rarity: 'uncommon', cost: 6, desc: 'Piercing weapons +10 mult; dmg taken -2' },
+    // === RARE TALISMANS ===
+    { id: 't_blood', name: 'Blood Vial', type: 'talisman', rarity: 'rare', cost: 8, desc: 'Excess heal to Shield HP (cap 30)' },
+    { id: 't_undying', name: 'Undying', type: 'talisman', rarity: 'rare', cost: 10, desc: 'Revive at 5 HP (destroyed on use)' },
+    { id: 't_gold', name: 'Gold Talisman', type: 'talisman', rarity: 'rare', cost: 8, desc: '+4x base score multiplier' },
+    { id: 't_evasion', name: 'Evasion Tactics', type: 'talisman', rarity: 'rare', cost: 8, desc: 'Flee two rooms in a row, once per chamber' },
+    // === CONSUMABLES ===
     { id: 'c_shield', name: 'Shield', type: 'consumable', cost: 5, desc: 'Single-use: +5 Temp HP' },
     { id: 'c_smoke', name: 'Smokescreen', type: 'consumable', cost: 5, desc: 'Single-use: Hide 1 monster' },
     { id: 'c_heal', name: 'Healing Salve', type: 'consumable', cost: 8, desc: 'Restore 10 HP immediately' },
@@ -65,8 +123,13 @@ const shopDb = [
 
 function pickWeightedShopItem() {
     // Weighted shop draft: instant health (high rate), instant armor (lower rate).
+    // Talismans weighted by rarity (rare rarer, common common).
     const entries = shopDb.map(db => {
         let w = 4;
+        if (db.type === 'talisman') {
+            if (db.rarity === 'uncommon') w = 2;
+            else if (db.rarity === 'rare') w = 1;
+        }
         if (db.id === 'c_heal') w = 45;
         if (db.id === 'c_armor') w = 15;
         return { item: db, weight: w };
@@ -93,7 +156,7 @@ function updateUI() {
     document.getElementById('gold').innerText = gold;
     document.getElementById('room-base').innerText = roomBase;
     document.getElementById('room-mult').innerText = roomMult;
-    document.getElementById('weapon').innerText = currentWeaponValue ? '♦ ' + currentWeaponValue + ' (Max: ' + currentWeaponLimit + ')' : 'None';
+    document.getElementById('weapon').innerText = currentWeaponValue ? '♦ ' + currentWeaponValue + ' ' + (weaponType(currentWeaponValue) || '') + ' (Max: ' + currentWeaponLimit + ')' : 'None';
     document.getElementById('deck-count').innerText = deck.length;
     document.getElementById('talismans-ui').innerText = talismans.length + '/4';
     const tl = document.getElementById('talisman-list');
@@ -136,7 +199,13 @@ function updateUI() {
         roomDiv.appendChild(el);
     });
 
-    document.getElementById('btn-flee').disabled = gameOver || fledLastRoom || cardsPlayedThisRoom > 0;
+    let fleeAllowed = !gameOver;
+    if (cardsPlayedThisRoom > 0) {
+        fleeAllowed = hasTalisman('t_smoke') && !smokeBombUsedThisChamber;
+    } else if (fledLastRoom) {
+        fleeAllowed = hasTalisman('t_evasion') && !evasionUsedThisChamber;
+    }
+    document.getElementById('btn-flee').disabled = !fleeAllowed;
     document.getElementById('btn-next').disabled = gameOver || currentRoom.filter(c => !c.played).length > 1;
 }
 
@@ -176,6 +245,10 @@ function initGame() {
     talismans = [];
     extraCards = [];
     currentItem = null;
+    fleeCount = 0;
+    temperedSteelUsed = false;
+    smokeBombUsedThisChamber = false;
+    evasionUsedThisChamber = false;
     rollMagicItem();
     document.getElementById('log').innerHTML = '';
     log("Game started. Entering Dungeon 1, Chamber 1.");
@@ -198,6 +271,8 @@ function startChamber() {
     roomBase = 0;
     roomMult = 0;
     fledLastRoom = false;
+    smokeBombUsedThisChamber = false;
+    evasionUsedThisChamber = false;
     currentRoom = [];
     gameOver = false;
     
@@ -223,9 +298,13 @@ function drawRoom() {
     const roomCompleted = unplayed.length === 0 && deck.length > 0;
     
     if (unplayed.length === 1 && suits[unplayed[0].suit].type === 'monster' && !fledLastRoom && cardsPlayedThisRoom > 0) {
-        if (typeof hasTalisman === 'function' && hasTalisman('t_coward')) {
-            hp = Math.min(20, hp + 1);
-            log("Coward's Luck: Healed 1 HP for leaving a monster behind.");
+        if (hasTalisman('t_intimidate') && !unplayed[0].intimidated) {
+            const m = unplayed[0];
+            const old = m.display;
+            m.value = Math.max(2, m.value - 2);
+            m.display = displayForValue(m.value);
+            m.intimidated = true;
+            log('Intimidation: the ' + old + ' Monster weakens to ' + m.display + ' for next room.');
         }
     }
     
@@ -237,8 +316,8 @@ function drawRoom() {
         currentRoom.push(cardToDraw);
     }
     
-    if (typeof hasTalisman === 'function' && hasTalisman('t_scary')) {
-        let targetIdx = currentRoom.findIndex(c => suits[c.suit].type === 'monster' && c.value <= 8 && !c.played);
+    if (hasTalisman('t_scary')) {
+        let targetIdx = currentRoom.findIndex(c => suits[c.suit].type === 'monster' && c.value <= 4 && !c.played);
         if (targetIdx !== -1) {
             let scaredCard = currentRoom.splice(targetIdx, 1)[0];
             deck.unshift(scaredCard);
@@ -252,13 +331,40 @@ function drawRoom() {
 }
 
 function fleeRoom() {
-    if (gameOver || fledLastRoom || cardsPlayedThisRoom > 0) {
-        return;
+    if (gameOver) return;
+    
+    // Smoke Bomb: allows skipping a room even mid-clear, once per chamber.
+    let usingSmoke = false;
+    if (cardsPlayedThisRoom > 0) {
+        if (hasTalisman('t_smoke') && !smokeBombUsedThisChamber) {
+            usingSmoke = true;
+            smokeBombUsedThisChamber = true;
+        } else {
+            return;
+        }
     }
-    log("Fled the room! Scooped all cards to the bottom of the deck.");
+    
+    // Evasion Tactics: allows fleeing two rooms in a row, once per chamber.
+    if (fledLastRoom) {
+        if (hasTalisman('t_evasion') && !evasionUsedThisChamber) {
+            evasionUsedThisChamber = true;
+        } else {
+            return;
+        }
+    }
+    
+    log(usingSmoke ? "Smoke Bomb! Skipped the room, scooping all cards to the bottom." : "Fled the room! Scooped all cards to the bottom of the deck.");
     currentRoom.forEach(c => deck.unshift(c)); 
     currentRoom = [];
     fledLastRoom = true;
+    fleeCount++;
+    
+    if (hasTalisman('t_cowardcharm')) {
+        const essence = 500 * fleeCount;
+        score += essence;
+        log("Coward's Charm: +" + essence + " essence (flee #" + fleeCount + ").");
+    }
+    
     drawRoom();
 }
 
@@ -569,20 +675,25 @@ function playCard(index, useWeaponChoice = false) {
     
     if (type === 'potion') {
         // Only heal if no potion used yet (unless you have Bottomless Flask)
-        if (!potionUsedThisTurn || (typeof hasTalisman === 'function' && hasTalisman('m_flask'))) {
+        if (!potionUsedThisTurn || hasTalisman('m_flask')) {
             const heal = card.value;
             if (hp + heal > 20) {
                 const excess = (hp + heal) - 20;
                 hp = 20;
-                if (typeof hasTalisman === 'function' && hasTalisman('t_blood')) {
-                    shieldHp += excess;
-                    log('Blood Vial: Converted ' + excess + ' excess healing to Shield HP!');
+                if (hasTalisman('t_blood')) {
+                    shieldHp = Math.min(30, shieldHp + excess);
+                    log('Blood Vial: Converted ' + excess + ' excess healing to Shield HP! (capped at 30)');
                 } else {
                     log('Drank potion. HP full.');
                 }
             } else {
                 hp += heal;
                 log('Drank potion. Restored ' + heal + ' HP.');
+            }
+            // Strength Potions: potion value adds to mult
+            if (hasTalisman('t_strpot')) {
+                roomMult += card.value;
+                log('Strength Potions: +' + card.value + ' mult.');
             }
         }
         // Silently discard if already used a potion this room
@@ -592,34 +703,62 @@ function playCard(index, useWeaponChoice = false) {
         currentWeaponValue = card.value;
         currentWeaponLimit = 15; 
         currentWeaponMult = card.value;
-        log('Equipped Weapon ' + card.display + '.');
+        temperedSteelUsed = false; // reset per weapon equip
+        
+        const wtype = weaponType(card.value);
+        let multBonus = 0;
+        if (wtype === 'Sharp') {
+            if (hasTalisman('t_sharp')) multBonus += 5;
+            if (hasTalisman('t_sharp_senses')) multBonus += 10;
+        } else if (wtype === 'Blunt') {
+            if (hasTalisman('t_heavy')) multBonus += 5;
+            if (hasTalisman('t_heavy_thoughts')) multBonus += 10;
+        } else if (wtype === 'Piercing') {
+            if (hasTalisman('t_pierce')) multBonus += 5;
+            if (hasTalisman('t_pierce_screams')) multBonus += 10;
+        }
+        currentWeaponMult += multBonus;
+        
+        log('Equipped ' + (wtype || '?') + ' Weapon ' + card.display + (multBonus > 0 ? ' (+' + multBonus + ' mult)' : '') + '.');
     } 
     else if (type === 'monster') {
+        const mtype = monsterType(card.value);
         let killMult = 1;
         let dmg = 0;
         let isBarehanded = true;
+        let effWeaponVal = currentWeaponValue;
         
         if (useWeaponChoice && currentWeaponValue !== null && card.value <= currentWeaponLimit) {
             isBarehanded = false;
             killMult = currentWeaponMult;
+            effWeaponVal = currentWeaponValue;
             
-            let effWeaponVal = currentWeaponValue;
-            if (typeof hasTalisman === 'function' && hasTalisman('t_blacksmith')) effWeaponVal += 3;
-            if (typeof hasTalisman === 'function' && hasTalisman('t_silver') && card.suit === 'Clubs') effWeaponVal *= 2;
+            if (hasTalisman('t_blacksmith')) effWeaponVal += 3;
+            if (hasTalisman('t_desperate') && currentWeaponLimit < currentWeaponValue / 2) {
+                effWeaponVal += 2;
+                log('Desperate Blows: weapon under 50% durability, +2 dmg.');
+            }
             
             dmg = Math.max(0, card.value - effWeaponVal);
             
-            log('Attacked ' + card.display + ' Monster with Weapon! Base dmg: ' + dmg);
-            currentWeaponLimit = card.value;
-            currentWeaponMult = card.value;
+            log('Attacked ' + card.display + ' ' + mtype + ' with Weapon!');
+            
+            // Tempered Steel: first kill with this weapon does not degrade it.
+            if (hasTalisman('t_tempered') && !temperedSteelUsed) {
+                temperedSteelUsed = true;
+                log('Tempered Steel: weapon did not degrade.');
+            } else {
+                currentWeaponLimit = card.value;
+                currentWeaponMult = card.value;
+            }
         } else {
             isBarehanded = true;
             dmg = card.value;
             
-            if (typeof hasTalisman === 'function' && hasTalisman('t_iron')) {
+            if (hasTalisman('t_iron')) {
                 dmg = Math.max(0, dmg - 3);
-                killMult = 4;
-                log('Fists of Iron! Damage reduced, Mult x4.');
+                killMult = 10;
+                log('Fists of Iron! Damage reduced, Mult 10x.');
             } else {
                 killMult = 1;
             }
@@ -633,9 +772,19 @@ function playCard(index, useWeaponChoice = false) {
             }
         }
         
-        if (typeof hasTalisman === 'function' && hasTalisman('t_quick')) {
-            dmg = Math.max(0, dmg - 2);
-        }
+        // Flat mult bonuses (Copper / Steel / Gold / Essential).
+        if (hasTalisman('t_copper')) killMult += 2;
+        if (hasTalisman('t_steel')) killMult += 2;
+        if (hasTalisman('t_gold')) killMult += 4;
+        if (hasTalisman('t_essential')) killMult += 3 * talismans.length;
+        
+        // Damage reduction (Quick Feet + Sharp Senses / Heavy Thoughts / Piercing Screams).
+        let dmgReduction = 0;
+        if (hasTalisman('t_quick')) dmgReduction += 2;
+        if (hasTalisman('t_sharp_senses')) dmgReduction += 2;
+        if (hasTalisman('t_heavy_thoughts')) dmgReduction += 2;
+        if (hasTalisman('t_pierce_screams')) dmgReduction += 2;
+        if (dmgReduction > 0) dmg = Math.max(0, dmg - dmgReduction);
         
         if (dmg > 0 && typeof shieldHp !== 'undefined' && shieldHp > 0) {
             let block = Math.min(shieldHp, dmg);
@@ -648,13 +797,24 @@ function playCard(index, useWeaponChoice = false) {
         if (dmg > 0) log('Took ' + dmg + ' damage to HP.');
         
         let earnedGold = (card.value <= 10) ? 1 : (card.value - 9);
-        if (isBarehanded && typeof hasTalisman === 'function' && hasTalisman('t_pick')) { earnedGold += 2; log('Pickpocket: +2G'); }
-        if (card.value >= 10 && typeof hasTalisman === 'function' && hasTalisman('t_bounty')) { earnedGold += 2; log('Bounty Hunter: +2G'); }
+        if (isBarehanded && hasTalisman('t_pick')) { earnedGold += 2; log('Pickpocket: +2G'); }
+        if (card.value >= 10 && hasTalisman('t_bounty')) { earnedGold += 5; log('Bounty Hunter: +5G'); }
+        if (card.value <= 6 && hasTalisman('t_chump')) { earnedGold += 1; log('Chump Change: +1G'); }
+        if (hasTalisman('t_bloodmoney') && dmg > 0) { earnedGold += dmg; log('Blood Money: +' + dmg + 'G from damage taken'); }
+        if (!isBarehanded && hasTalisman('t_overkill') && effWeaponVal > card.value) {
+            const over = effWeaponVal - card.value;
+            earnedGold += over;
+            log('Overkill: +' + over + 'G');
+        }
         
         gold += earnedGold;
         roomBase += card.value;
+        // Monster-type base essence bonuses.
+        if (hasTalisman('t_grave') && mtype === 'Zombie') { roomBase += 10; log('Grave Digger: +10 base vs ' + mtype); }
+        if (hasTalisman('t_ghost') && (mtype === 'Ghost' || mtype === 'Elemental')) { roomBase += 10; log('Ghost Buster: +10 base vs ' + mtype); }
+        if (hasTalisman('t_abom') && (mtype === 'Demon' || mtype === 'Dragon')) { roomBase += 10; log('Abomination Hater: +10 base vs ' + mtype); }
         roomMult += killMult;
-        log('Defeated ' + card.display + '! +' + card.value + ' base, +' + killMult + ' mult. (+' + earnedGold + ' Gold)');
+        log('Defeated ' + card.display + ' ' + mtype + '! +' + card.value + ' base, +' + killMult + ' mult. (+' + earnedGold + ' Gold)');
     }
 
     card.played = true;
