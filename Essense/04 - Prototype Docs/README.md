@@ -44,10 +44,6 @@ This is the **web prototype** (HTML/JavaScript). Open `index.html` in a browser 
 
 A production build in **LÖVE 2D** (Lua) is planned — same engine as Balatro.
 
-## Documentation Vault
-
-The repo now includes an Obsidian vault at `Essense/` containing the current design notes, prior conversation notes, and prototype docs for the demo.
-
 ## Roadmap
 
 - [x] Core Scoundrel loop (rooms, combat, weapon degradation)
