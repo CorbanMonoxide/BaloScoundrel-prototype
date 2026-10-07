@@ -1,59 +1,204 @@
-# BaloScoundrel
+# BaloScoundrel / Essence
 
-A **Balatro-style roguelike deckbuilder** built on the **Scoundrel solitaire** card game. Draw from a standard 52-card deck, manage weapon degradation, collect talismans, and fight through ever-harder dungeons.
+A **Balatro-flavored Scoundrel roguelike** built in **HTML/JavaScript**.
 
-## Core Mechanics
+The current demo is increasingly centered on an **Essence scoring loop**:
+- clear a 4-card room
+- build **Base** from monsters you defeat
+- stack **Mult** from weapons, talismans, potions, and combat choices
+- cash the room out as **Base × Mult**
+- hit the **chamber target** before the deck runs dry
+- spend earned gold in the shop to shape the next chamber
 
-**Scoundrel at its heart** — 4 cards per room, must play 3. Leave exactly 1 behind.
+This is no longer just “Scoundrel with a shop.” The prototype is now about converting tactical room decisions into a score engine.
 
-| Card | Suit | Role |
-|------|------|------|
-| Monsters | ♠ ♣ | Defeat with weapons or fists |
-| Weapons | ♦ | Equip to set damage and multiplier |
-| Potions | ♥ | Heal HP (1 per room) |
+## Core Room Structure
 
-**Weapon Degradation** — after a kill, your weapon's effective value drops to the monster's value. You can't kill anything higher than your weapon's current limit. This is the core tension engine.
+Each room draws **4 cards**.
+You must resolve **at least 3** of them to move on.
+Exactly **1 card is left behind**.
 
-**Scoring** → `(Monster Value × 10) × Weapon Multiplier`
+### Card suits
+- **♠ / ♣ Monsters** — the main source of Base, damage, and gold
+- **♦ Weapons** — define your current weapon damage profile and usually your mult scaling
+- **♥ Potions** — restore HP and, with some talismans, can also contribute to mult
 
-## Roguelike Layer (The "Balatro" Part)
+## The Scoring Loop
 
-- **Talismans** — persistent Joker-equivalents (4 slots). Silver Blades, Quick Feet, Blood Vial, Undying, and more.
-- **Magic Items** — permanent upgrades per dungeon run (Bank Gold, Talisman Belt, Bottomless Flask, Evasion Tactics)
-- **Consumables** — single-use items (Shield, Smokescreen)
-- **Gold Economy** — earn gold per kill, spend in shops between chambers
-- **Dungeon Scaling** — the deck grows per chamber, injecting fresh monsters
+The current run structure is built around **room scoring**, not per-hit scoring.
 
-## Talismans
+### 1) Build Base
+When you defeat monsters in a room, they add to the room’s **Base**.
 
-| Name | Effect |
-|------|--------|
-| Silver Blades | Weapons 2× damage vs Clubs |
-| Quick Feet | Dodge 2 damage per attack |
-| Pickpocket | +2G on barehanded kills |
-| Bounty Hunter | +2 Gold for kills ≥ 10 |
-| Fists of Iron | Fist damage -3, Multiplier ×4 |
-| Blood Vial | Excess healing → Shield HP |
-| Undying | Revive at 5HP (destroyed on use) |
+In the current prototype, monster value is converted into scoring essence at a **10× scale**:
+- defeating a value 7 monster contributes **70 Base**
+- defeating multiple monsters stacks that Base before the room resolves
 
-...and more to come.
+Some talismans add **bonus Base** against specific monster types.
 
-## Prototype
+### 2) Build Mult
+Mult is assembled during the room from several sources:
+- the currently equipped weapon
+- weapon-family talismans
+- flat talisman bonuses
+- barehanded modifiers
+- potion-to-mult effects
+- held-talisman scaling effects
 
-This is the **web prototype** (HTML/JavaScript). Open `index.html` in a browser to play.
+Important: the prototype currently treats **equipping a weapon as setting your main room mult engine**. Weapon choice is therefore both a survival tool and a scoring commitment.
 
-A production build in **LÖVE 2D** (Lua) is planned — same engine as Balatro.
+### 3) Cash Out the Room
+Once 3 cards are cleared and the room is resolved, the game scores the room as:
 
-## Documentation Vault
+`Room Score = Room Base × Room Mult`
 
-The repo now includes an Obsidian vault at `Essense/` containing the current design notes, prior conversation notes, and prototype docs for the demo.
+That room score is then added to the chamber total.
 
-## Roadmap
+If you clear a room with no monsters, you usually get **no score** from that room.
 
-- [x] Core Scoundrel loop (rooms, combat, weapon degradation)
-- [x] Shop system (Talismans, Consumables, Magic, Chests)
-- [x] Gold economy and scoring
-- [x] Dungeon/chamber progression with scaling
-- [ ] Booster packs (draft cards between chambers)
-- [ ] LÖVE 2D production build
-- [ ] Additional talismans, enemies, and dungeon modifiers
+## Combat Tension
+
+### Weapons degrade
+After a weapon kill, the weapon’s effective limit drops to the value of the monster you just killed.
+That means:
+- big weapons let you open strong
+- weak kills can shrink your ceiling
+- saving a weapon for the right monster can matter more than using it immediately
+
+### Barehanded is a real scoring choice
+Going barehanded is not just desperation.
+Depending on talismans, it can be a valid scoring/economy line:
+- fist-specific mult effects
+- gold-on-barehanded-kill effects
+- weapon preservation for a later room
+
+### HP persists as pressure
+The current demo includes persistent HP pressure across progression, with healing, shield, revive, and mitigation effects shaping whether you can afford greedier scoring lines.
+
+## Chamber / Dungeon Structure
+
+Runs are divided into **chambers** and **dungeons**.
+
+### Chamber targets
+Each chamber has a **target score**.
+You advance by reaching that target before exhausting the chamber’s deck pressure.
+
+The current prototype uses:
+- **3 chambers per dungeon**
+- escalating chamber targets inside a dungeon
+- geometric/exponential target scaling across dungeons
+
+So the game loop is:
+1. enter chamber
+2. clear rooms
+3. convert room decisions into score
+4. beat target
+5. shop
+6. enter next chamber
+
+## Gold Economy
+
+Gold is earned primarily from monster kills, then spent between chambers.
+
+Gold can be improved by build choices such as:
+- barehanded kill bonuses
+- bounty effects on strong monsters
+- overkill bonuses
+- damage-taken-to-gold effects
+
+Gold is then turned into power through the shop.
+
+## Shop Layer
+
+Between chambers, the shop lets you reshape the run.
+
+Current categories include:
+- **Talismans** — persistent build-defining modifiers
+- **Consumables** — immediate utility and survivability
+- **Magic Items** — broader run-level upgrades
+- **Chests / Pack-style randomness**
+- **Shop rerolls** — currently escalating in cost: **5G, 10G, 15G, ...**
+
+The shop exists to answer the scoring question:
+**how do you make the next chamber’s Base × Mult line stronger, safer, or greedier?**
+
+## Talisman System
+
+The prototype now includes a substantial talisman pool with effects that push builds in different directions:
+- weapon-family mult builds
+- fist builds
+- potion builds
+- monster-type hate packages
+- gold snowball lines
+- flee/tempo utility
+- survivability and revive effects
+- scaling “more talismans = more mult” effects
+
+Talismans are the main bridge between “Scoundrel tactics” and “Balatro-style build expression.”
+
+## Current Prototype Identity
+
+The strongest current identity of the demo is:
+
+**Scoundrel room tactics feeding a Balatro-style score engine.**
+
+You are not just trying to survive a room.
+You are trying to decide:
+- which monster becomes Base now
+- which weapon line becomes Mult
+- what damage is acceptable
+- when to preserve a weapon
+- when to take gold instead of safety
+- when to shop for survival vs scaling
+
+That is the heart of the current demo.
+
+## Repo Contents
+
+### Playable prototype
+- `index.html`
+- `game.js`
+
+Open `index.html` in a browser to play the current demo.
+
+### Design / implementation docs
+- `Scoundrel_Rules.md`
+- `Talisman_Design.md`
+- `BOOSTER_PACK_FEATURE.md`
+- `IMPLEMENTATION_SUMMARY.txt`
+
+### Obsidian vault
+The repo includes an Obsidian vault at:
+- `Essense/`
+
+This vault contains:
+- current game design notes
+- prior conversation notes
+- prototype documentation
+
+Open the `Essense/` folder itself as an Obsidian vault.
+
+## Near-Term Focus
+
+Current direction, based on the playable demo:
+- refine the **Base × Mult** scoring loop
+- tighten chamber target pacing
+- make weapon choices create more interesting score tension
+- balance gold vs survivability vs scaling
+- continue expanding talisman/build diversity
+- keep shaping the project around the **Essence** identity
+
+## Longer-Term Direction
+
+- deeper content pools
+- better room/chamber modifiers
+- stronger booster / pack systems
+- cleaner presentation and UX
+- eventual **LÖVE 2D** production build
+
+---
+
+If you are opening this repo fresh, start here:
+1. play the web demo
+2. read `Scoundrel_Rules.md`
+3. open the `Essense/` vault for the broader design notes
